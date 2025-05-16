@@ -32,6 +32,31 @@ def ajouter_recette():
 def home():
     return "API Émaux en ligne", 200
 
+@app.route("/ajouter_matiere", methods=["POST"])
+def ajouter_matiere():
+    data = request.get_json()
+    nom = data["nom"]
+
+    if not os.path.exists("stock.json"):
+        stock = {}
+    else:
+        with open("stock.json", "r") as f:
+            stock = json.load(f)
+
+    if nom in stock:
+        return jsonify({"message": "La matière existe déjà."}), 400
+
+    stock[nom] = {
+        "unite": data.get("unite", "kg"),
+        "quantite": 0,
+        "achats": []
+    }
+
+    with open("stock.json", "w") as f:
+        json.dump(stock, f, indent=2)
+
+    return jsonify({"message": f"{nom} ajoutée au stock."}), 201
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
