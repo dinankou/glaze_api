@@ -12,6 +12,10 @@ if not os.path.exists(DATA_FILE):
     with open(DATA_FILE, "w") as f:
         json.dump([], f)
 
+# ==========================================
+#   ROUTE RECETTES
+# ==========================================
+
 @app.route("/recettes", methods=["GET"])
 def get_recettes():
     with open(DATA_FILE, "r") as f:
@@ -28,9 +32,17 @@ def ajouter_recette():
         json.dump(data, f, indent=2)
     return jsonify({"message": "Recette ajoutée"}), 201
 
+# ==========================================
+#   PAGE D'ACCUEIL DE l'API
+# ==========================================
+
 @app.route("/", methods=["GET"])
 def home():
     return "API Émaux en ligne", 200
+
+# ==========================================
+#   ROUTE AJOUTER MATIERES
+# ==========================================
 
 @app.route("/ajouter_matiere", methods=["POST"])
 def ajouter_matiere():
@@ -56,6 +68,51 @@ def ajouter_matiere():
         json.dump(stock, f, indent=2)
 
     return jsonify({"message": f"{nom} ajoutée au stock."}), 201
+
+# ==========================================
+#              ROUTE ACHATS
+# ==========================================
+
+@app.route("/achat", methods=["POST"])
+def enregistrer_achat():
+    data = request.get_json()
+
+    nom = data["nom"]
+    quantite = data["quantite"]
+    prix = data["prix"]
+    fournisseur = data.get("fournisseur", "")
+    date = data.get("date", "")
+
+    # Charger ou créer le fichier stock.json
+    if not os.path.exists("stock.json"):
+        return jsonify({"message": "Le fichier stock.json n'existe pas."}), 500
+
+    with open("stock.json", "r") as f:
+        stock = json.load(f)
+
+    # Vérifier que la matière existe
+    if nom not in stock:
+        return jsonify({"message": f"La matière '{nom}' n'existe pas."}), 404
+
+    # Ajouter la quantité au stock
+    stock[nom]["quantite"] += quantite
+
+    # Ajouter l'achat à l'historique
+    stock[nom]["achats"].append({
+        "quantite": quantite,
+        "prix": prix,
+        "fournisseur": fournisseur,
+        "date": date
+    })
+
+    # Sauvegarder dans stock.json
+    with open("stock.json", "w") as f:
+        json.dump(stock, f, indent=2)
+
+    return jsonify({"message": f"Achat enregistré pour {nom}."}), 201
+
+# 🚀 Point d'entrée : lance le serveur Flask
+# Utilise le port fourni par Railway ou 5000 en local
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
