@@ -48,6 +48,10 @@ def home():
 def ajouter_matiere():
     data = request.get_json()
     nom = data["nom"]
+    mat_type = data.get("type", "base")
+    
+    if mat_type not in ["base", "oxyde"]:
+        return jsonify({"message": "Type invalide. Utilisez 'base' ou 'oxyde'."}), 400
 
     if not os.path.exists("stock.json"):
         stock = {}
@@ -60,6 +64,7 @@ def ajouter_matiere():
 
     stock[nom] = {
         "unite": data.get("unite", "kg"),
+        "type": mat_type,
         "quantite": 0,
         "achats": []
     }
@@ -82,6 +87,11 @@ def enregistrer_achat():
     prix = data["prix"]
     fournisseur = data.get("fournisseur", "")
     date = data.get("date", "")
+    unite = data.get("unite", "kg")
+    mat_type = data.get("type", "base")
+
+    if mat_type not in ["base", "oxyde"]:
+        return jsonify({"message": "Type invalide. Utilisez 'base' ou 'oxyde'."}), 400
 
     if not os.path.exists("stock.json"):
         stock = {}
@@ -92,6 +102,7 @@ def enregistrer_achat():
     if nom not in stock:
         stock[nom] = {
             "unite": "kg",
+            "type": mat_type,
             "quantite": 0,
             "achats": []
         }
