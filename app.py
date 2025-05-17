@@ -135,6 +135,111 @@ def consulter_stock():
     return jsonify(stock), 200
 
 # ==========================================
+#              SIMULE UNE PRODUCTION
+# ==========================================
+
+@app.route("/simuler_production", methods=["POST"])
+def simuler_production():
+    data = request.get_json()
+    nom_recette = data["recette"]
+    masse_totale = data["masse"]
+
+    # Charger les recettes
+    if not os.path.exists("recettes.json"):
+        return jsonify({"message": "Fichier recettes.json introuvable."}), 500
+
+    with open("recettes.json", "r") as f:
+        recettes = json.load(f)
+
+    # Chercher la recette demandée
+    recette = next((r for r in recettes if r["nom"] == nom_recette), None)
+    if not recette:
+        return jsonify({"message": f"Recette '{nom_recette}' introuvable."}), 404
+
+    # Charger le stock
+    if not os.path.exists("stock.json"):
+        return jsonify({"message": "Fichier stock.json introuvable."}), 500
+
+    with open("stock.json", "r") as f:
+        stock = json.load(f)
+
+    resultats = []
+    stock_insuffisant = False
+    min_ratio = 1  # pour calculer la prod max possible
+
+    # Fusionner base et oxydes dans une seule dict {nom: pourcentage}
+    composants = recette["base"].copy()
+    composants.update(recette["oxydes"])
+
+    for matiere, pourcentage in composants.items():
+        masse_necessaire = round((pourcentage / 100) * masse_totale, 2)
+
+        infos_stock = stock.get(matiere)
+        if not infos_stock:
+            resultats.append({
+                "matiere": matiere,
+                "quantite_necessaire": masse_necessaire,
+                "disponible": 0,
+                "statut": "**INSUFFISANT** (matière absente)",  # noir
+                "couleur": "noir",
+                "manquant": masse_necessaire
+            })
+            stock_insuffisant = True
+            min_ratio = 0
+            continue
+
+        quantite_disponible = infos_stock["quantite"]
+        type_matiere = infos_stock.get("type", "base")
+
+        # Seuils selon type
+        seuil_orange = 300 if type_matiere == "base" else 30
+        seuil_rouge = 200 if type_matiere == "base" else 20
+        seuil_noir = 100 if type_matiere == "base" else 10
+
+        reste_apres_prod = quantite_disponible - masse_necessaire
+
+        # Calcul du statut
+        if reste_apres_prod < seuil_noir:
+            statut = "**INSUFFISANT**"
+            couleur = "noir"
+            stock_insuffisant = True
+            ratio = quantite_disponible / masse_necessaire if masse_necessaire > 0 else 0
+        elif reste_apres_prod < seuil_rouge:
+            statut = "**OK**"
+            couleur = "rouge"
+            ratio = 1
+        elif reste_apres_prod < seuil_orange:
+            statut = "**OK**"
+            couleur = "orange"
+            ratio = 1
+        else:
+            statut = "**OK**"
+            couleur = "vert"
+            ratio = 1
+
+        min_ratio = min(min_ratio, quantite_disponible / masse_necessaire) if masse_necessaire > 0 else min_ratio
+
+        resultats.append({
+            "matiere": matiere,
+            "quantite_necessaire": masse_necessaire,
+            "disponible": quantite_disponible,
+            "reste_apres_production": round(reste_apres_prod, 2),
+            "statut": statut,
+            "couleur": couleur,
+            "manquant": round(max(0, masse_necessaire - quantite_disponible), 2)
+        })
+
+    prod_max = round(min_ratio * masse_totale, 2) if min_ratio > 0 else 0
+
+    return jsonify({
+        "recette": nom_recette,
+        "demande": masse_totale,
+        "production_possible": not stock_insuffisant,
+        "production_maximale_possible": prod_max,
+        "details": resultats
+    }), 200
+
+# ==========================================
 # 🚀 Point d'entrée : lance le serveur Flask
 # Utilise le port fourni par Railway ou 5000 en local
 # ==========================================
