@@ -109,8 +109,24 @@ def enregistrer_achat():
 
     return jsonify({"message": f"Achat enregistré pour {nom}."}), 201
 
+# ==========================================
+#              AFFICHE LE STOCK
+# ==========================================
+
+@app.route("/stock", methods=["GET"])
+def consulter_stock():
+    if not os.path.exists("stock.json"):
+        return jsonify({"message": "Le fichier stock.json n'existe pas."}), 404
+
+    with open("stock.json", "r") as f:
+        stock = json.load(f)
+
+    return jsonify(stock), 200
+
+# ==========================================
 # 🚀 Point d'entrée : lance le serveur Flask
 # Utilise le port fourni par Railway ou 5000 en local
+# ==========================================
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
