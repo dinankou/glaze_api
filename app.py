@@ -83,21 +83,20 @@ def enregistrer_achat():
     fournisseur = data.get("fournisseur", "")
     date = data.get("date", "")
 
-    # Charger ou créer le fichier stock.json
     if not os.path.exists("stock.json"):
-        return jsonify({"message": "Le fichier stock.json n'existe pas."}), 500
+        stock = {}
+    else:
+        with open("stock.json", "r") as f:
+            stock = json.load(f)
 
-    with open("stock.json", "r") as f:
-        stock = json.load(f)
-
-    # Vérifier que la matière existe
     if nom not in stock:
-        return jsonify({"message": f"La matière '{nom}' n'existe pas."}), 404
+        stock[nom] = {
+            "unite": "kg",
+            "quantite": 0,
+            "achats": []
+        }
 
-    # Ajouter la quantité au stock
     stock[nom]["quantite"] += quantite
-
-    # Ajouter l'achat à l'historique
     stock[nom]["achats"].append({
         "quantite": quantite,
         "prix": prix,
@@ -105,7 +104,6 @@ def enregistrer_achat():
         "date": date
     })
 
-    # Sauvegarder dans stock.json
     with open("stock.json", "w") as f:
         json.dump(stock, f, indent=2)
 
