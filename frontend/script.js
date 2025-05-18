@@ -26,6 +26,50 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 //////////////////////////////////////////////
+// ajoute une recette
+//////////////////////////////////////////////
+
+// Convertit un texte "silice:40, kaolin:30" → {silice: 40, kaolin: 30}
+function parseComposition(text) {
+  const obj = {};
+  text.split(",").forEach(entry => {
+    const [cle, val] = entry.split(":").map(e => e.trim());
+    if (cle && !isNaN(parseFloat(val))) obj[cle] = parseFloat(val);
+  });
+  return obj;
+}
+
+async function ajouterRecette(data) {
+  try {
+    const res = await fetch(`${API_URL}/ajouter_recette`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    });
+
+    const retour = await res.json();
+    document.getElementById("resultat-recette").textContent = retour.message;
+  } catch (err) {
+    console.error(err);
+    alert("Erreur lors de l'ajout de la recette.");
+  }
+}
+
+document.getElementById("form-recette").addEventListener("submit", e => {
+  e.preventDefault();
+
+  const nom = document.getElementById("recette-nom").value.trim();
+  const base = parseComposition(document.getElementById("recette-base").value);
+  const oxydes = parseComposition(document.getElementById("recette-oxydes").value);
+
+  if (nom && Object.keys(base).length) {
+    ajouterRecette({ nom, base, oxydes });
+  } else {
+    alert("Nom et base requis.");
+  }
+});
+
+//////////////////////////////////////////////
 // Envoie une matière à l'API /ajouter_matiere
 //////////////////////////////////////////////
 async function ajouterMatiere(nom, type) {
