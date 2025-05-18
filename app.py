@@ -106,7 +106,7 @@ def enregistrer_achat():
     prix = data["prix"]
     fournisseur = data.get("fournisseur", "")
     date = data.get("date", "")
-    unite = data.get("unite", "kg")
+    unite = data.get("unite", "g")
     mat_type = data.get("type", "base")
 
     if mat_type not in ["base", "oxyde"]:
@@ -123,7 +123,7 @@ def enregistrer_achat():
 
     if nom not in stock:
         stock[nom] = {
-            "unite": "kg",
+            "unite": "g",
             "type": mat_type,
             "quantite": 0,
             "achats": []
