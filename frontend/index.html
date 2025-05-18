@@ -13,5 +13,57 @@
     <button id="btn-stock">Charger le stock</button>
     <pre id="affichage-stock"></pre>
   </section>
+<section id="ajout-matiere">
+  <h2>Ajouter une matière</h2>
+  <form id="form-ajout">
+    <input type="text" id="nom" placeholder="Nom" required>
+
+    
+    <select id="type">
+      <option value="base">Base</option>
+      <option value="oxyde">Oxyde</option>
+    </select>
+    <button type="submit">Ajouter</button>
+  </form>
+  <p id="resultat-ajout"></p>
+</section>
+
+<section id="ajout-achat">
+  <h2>Enregistrer un achat</h2>
+  <form id="form-achat">
+    <input type="text" id="achat-nom" placeholder="Nom de la matière" required>
+    <input type="number" id="achat-quantite" placeholder="Quantité (g)" required>
+    <input type="number" id="achat-prix" placeholder="Prix (€)" required>
+    <input type="text" id="achat-fournisseur" placeholder="Fournisseur">
+    <input type="date" id="achat-date">
+    <select id="achat-type">
+      <option value="base">Base</option>
+      <option value="oxyde">Oxyde</option>
+    </select>
+    <button type="submit">Ajouter l'achat</button>
+  </form>
+  <p id="resultat-achat"></p>
+</section>
+
+<section id="simulation">
+  <h2>Simulation de production</h2>
+  <form id="form-simulation">
+    <input type="text" id="simul-recette" placeholder="Nom de la recette" required>
+    <input type="number" id="simul-masse" placeholder="Masse totale (g)" required>
+    <button type="submit">Simuler</button>
+  </form>
+  <pre id="resultat-simulation"></pre>
+</section>
+
+<section id="production">
+  <h2>Production réelle</h2>
+  <form id="form-production">
+    <input type="text" id="prod-recette" placeholder="Nom de la recette" required>
+    <input type="number" id="prod-masse" placeholder="Masse à produire (g)" required>
+    <button type="submit">Produire</button>
+  </form>
+  <p id="resultat-production"></p>
+</section>
+  
 </body>
 </html>
