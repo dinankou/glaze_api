@@ -24,12 +24,29 @@ def get_recettes():
 
 @app.route("/ajouter_recette", methods=["POST"])
 def ajouter_recette():
-    recette = request.json
+    nouvelle_recette = request.json
+
+    # Charger les recettes existantes
     with open(DATA_FILE, "r") as f:
         data = json.load(f)
-    data.append(recette)
+
+    # Aplatir les recettes si liste imbriquée
+    recettes_flat = []
+    for r in data:
+        if isinstance(r, list):
+            recettes_flat.extend(r)
+        elif isinstance(r, dict):
+            recettes_flat.append(r)
+
+    # Vérifier les doublons (même nom)
+    if any(r.get("nom") == nouvelle_recette.get("nom") for r in recettes_flat):
+        return jsonify({"message": "Une recette avec ce nom existe déjà."}), 400
+
+    # Ajouter et sauvegarder proprement
+    recettes_flat.append(nouvelle_recette)
     with open(DATA_FILE, "w") as f:
-        json.dump(data, f, indent=2)
+        json.dump(recettes_flat, f, indent=2)
+
     return jsonify({"message": "Recette ajoutée"}), 201
 
 # ==========================================
