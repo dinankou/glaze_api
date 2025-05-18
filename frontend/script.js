@@ -7,18 +7,35 @@ const API_URL = "https://glazeapi-production.up.railway.app";
 
 async function chargerStock() {
   try {
-    // Appel GET à l'API /stock
     const res = await fetch(`${API_URL}/stock`);
-    const data = await res.json();
+    const stock = await res.json();
 
-    // Affiche les données formatées dans la balise <pre>
-    document.getElementById("affichage-stock").textContent = JSON.stringify(data, null, 2);
+    const tbody = document.querySelector("#table-stock tbody");
+    tbody.innerHTML = ""; // vide le tableau
+
+    for (const [nom, matiere] of Object.entries(stock)) {
+      const tr = document.createElement("tr");
+
+      // Quantité toujours en grammes
+      const quantite = matiere.unite === "kg"
+        ? matiere.quantite * 1000
+        : matiere.quantite;
+
+      tr.innerHTML = `
+        <td>${nom}</td>
+        <td>${quantite} g</td>
+        <td>${matiere.type}</td>
+        <td>${matiere.achats.length}</td>
+      `;
+
+      tbody.appendChild(tr);
+    }
   } catch (err) {
-    // En cas d'erreur : log + message d'alerte
     console.error("Erreur :", err);
     alert("Erreur lors du chargement du stock.");
   }
 }
+
 
 // Attache l'événement "click" au bouton une fois la page chargée
 document.addEventListener("DOMContentLoaded", () => {
