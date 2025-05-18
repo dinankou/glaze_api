@@ -272,6 +272,112 @@ def simuler_production():
     }), 200
 
 # ==========================================
+#   ROUTE PRODUIRE
+# ==========================================
+
+@app.route("/produire", methods=["POST"])
+def produire():
+    data = request.get_json()
+    nom_recette = data.get("recette")
+    masse_totale = data.get("masse")
+    confirmer = data.get("confirmer", False)
+
+    if not nom_recette or not masse_totale:
+        return jsonify({"message": "Champs 'recette' et 'masse' requis."}), 400
+
+    # Charger les recettes
+    if not os.path.exists("recettes.json"):
+        return jsonify({"message": "Fichier recettes.json introuvable."}), 500
+
+    with open("recettes.json", "r") as f:
+        recettes = json.load(f)
+
+    # Aplatir les recettes
+    recettes_flat = []
+    for r in recettes:
+        if isinstance(r, list):
+            recettes_flat.extend(r)
+        elif isinstance(r, dict):
+            recettes_flat.append(r)
+
+    recette = next((r for r in recettes_flat if r.get("nom") == nom_recette), None)
+    if not recette:
+        return jsonify({"message": f"Recette '{nom_recette}' introuvable."}), 404
+
+    # Charger le stock
+    if not os.path.exists("stock.json"):
+        return jsonify({"message": "Fichier stock.json introuvable."}), 500
+
+    with open("stock.json", "r") as f:
+        stock = json.load(f)
+
+    composants = recette["base"].copy()
+    composants.update(recette["oxydes"])
+
+    details = []
+    stock_negatif = False
+    alerte = False
+
+    for matiere, pourcentage in composants.items():
+        masse_necessaire = round((pourcentage / 100) * masse_totale, 2)
+        infos_stock = stock.get(matiere)
+
+        if not infos_stock:
+            return jsonify({"message": f"Matière '{matiere}' absente du stock."}), 400
+
+        quantite_disponible = infos_stock["quantite"]
+        reste_apres = round(quantite_disponible - masse_necessaire, 2)
+
+        type_matiere = infos_stock.get("type", "base")
+        seuil_noir = 100 if type_matiere == "base" else 10
+
+        niveau = "ok"
+        if reste_apres < 0:
+            niveau = "negatif"
+            stock_negatif = True
+        elif reste_apres < seuil_noir:
+            niveau = "noir"
+            alerte = True
+
+        details.append({
+            "matiere": matiere,
+            "quantite_necessaire": masse_necessaire,
+            "disponible": quantite_disponible,
+            "reste_apres": reste_apres,
+            "niveau": niveau
+        })
+
+    # Cas bloquant : stock négatif
+    if stock_negatif:
+        return jsonify({
+            "production_possible": False,
+            "details": details,
+            "message": "Production impossible. Le stock serait négatif. Révisez d'abord les quantités."
+        }), 400
+
+    # Si pas confirmé, afficher simulation + alerte
+    if not confirmer:
+        return jsonify({
+            "production_possible": True,
+            "alerte": alerte,
+            "details": details,
+            "message": "Stock très bas sur certaines matières. Vérifiez avant de confirmer."
+        }), 200
+
+    # Si confirmé et tout est OK : mise à jour du stock
+    for item in details:
+        matiere = item["matiere"]
+        stock[matiere]["quantite"] = round(stock[matiere]["quantite"] - item["quantite_necessaire"], 2)
+
+    with open("stock.json", "w") as f:
+        json.dump(stock, f, indent=2)
+
+    return jsonify({
+        "message": f"Production de {masse_totale}g enregistrée pour '{nom_recette}'. Stock mis à jour.",
+        "mise_a_jour": True
+    }), 200
+
+# ==========================================
 # 🚀 Point d'entrée : lance le serveur Flask
 # Utilise le port fourni par Railway ou 5000 en local
 # ==========================================
