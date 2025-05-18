@@ -168,8 +168,18 @@ def simuler_production():
     with open("recettes.json", "r") as f:
         recettes = json.load(f)
 
-    # Chercher la recette demandée
-    recette = next((r for r in recettes if r["nom"] == nom_recette), None)
+# Chercher la recette demandée
+
+    # Aplatir les recettes si besoin
+    recettes_flat = []
+    for r in recettes:
+        if isinstance(r, list):
+            recettes_flat.extend(r)
+        elif isinstance(r, dict):
+            recettes_flat.append(r)
+
+    # Chercher la bonne recette
+    recette = next((r for r in recettes_flat if r.get("nom") == nom_recette), None)
     if not recette:
         return jsonify({"message": f"Recette '{nom_recette}' introuvable."}), 404
 
