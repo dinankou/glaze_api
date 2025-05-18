@@ -43,6 +43,41 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 //////////////////////////////////////////////
+// affiche la liste des recettes
+//////////////////////////////////////////////
+
+async function chargerRecettes() {
+  try {
+    const res = await fetch(`${API_URL}/recettes`);
+    const recettes = await res.json();
+
+    const ul = document.getElementById("liste-recettes");
+    ul.innerHTML = ""; // vide la liste
+
+    recettes.forEach(recette => {
+      const li = document.createElement("li");
+
+      const base = Object.entries(recette.base)
+        .map(([nom, val]) => `${nom}: ${val}%`)
+        .join(", ");
+
+      const oxydes = Object.entries(recette.oxydes || {})
+        .map(([nom, val]) => `${nom}: ${val}%`)
+        .join(", ");
+
+      li.textContent = `${recette.nom} → Base: [${base}] | Oxydes: [${oxydes}]`;
+      ul.appendChild(li);
+    });
+
+  } catch (err) {
+    console.error("Erreur :", err);
+    alert("Erreur lors du chargement des recettes.");
+  }
+}
+
+document.getElementById("btn-recettes").addEventListener("click", chargerRecettes);
+
+//////////////////////////////////////////////
 // ajoute une recette
 //////////////////////////////////////////////
 
