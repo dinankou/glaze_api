@@ -70,6 +70,8 @@ def ajouter_matiere():
     if mat_type not in ["base", "oxyde"]:
         return jsonify({"message": "Type invalide. Utilisez 'base' ou 'oxyde'."}), 400
 
+    unite = "g" if data.get("unite") == "kg" else data.get("unite", "g")
+
     if not os.path.exists("stock.json"):
         stock = {}
     else:
@@ -80,7 +82,7 @@ def ajouter_matiere():
         return jsonify({"message": "La matière existe déjà."}), 400
 
     stock[nom] = {
-        "unite": data.get("unite", "kg"),
+        "unite": unite,
         "type": mat_type,
         "quantite": 0,
         "achats": []
@@ -110,6 +112,9 @@ def enregistrer_achat():
     if mat_type not in ["base", "oxyde"]:
         return jsonify({"message": "Type invalide. Utilisez 'base' ou 'oxyde'."}), 400
 
+    if unite == "kg":
+        quantite *= 1000  # conversion en grammes
+    
     if not os.path.exists("stock.json"):
         stock = {}
     else:
