@@ -102,25 +102,31 @@ def enregistrer_achat():
     data = request.get_json()
 
     nom = data["nom"]
-    quantite = data["quantite"]
-    prix = data["prix"]
+    quantite = data["quantite"]                        # quantité en grammes (saisie en grammes dans le frontend)
+    prix_unitaire = data["prix"]                       # prix en €/kg (et non pas le total)
     fournisseur = data.get("fournisseur", "")
     date = data.get("date", "")
     unite = data.get("unite", "g")
     mat_type = data.get("type", "base")
-
+    
+    # Validation du type
     if mat_type not in ["base", "oxyde"]:
         return jsonify({"message": "Type invalide. Utilisez 'base' ou 'oxyde'."}), 400
 
     if unite == "kg":
-        quantite *= 1000  # conversion en grammes
-    
+        quantite *= 1000                              # conversion en grammes
+        
+    # calcul du prix total basé sur le prix/kg
+    prix_total = round(prix_unitaire * (quantite / 1000), 2)
+
+    # Chargement du fichier stock
     if not os.path.exists("stock.json"):
         stock = {}
     else:
         with open("stock.json", "r") as f:
             stock = json.load(f)
-
+            
+    # Initialisation de la matière si absente
     if nom not in stock:
         stock[nom] = {
             "unite": "g",
@@ -128,15 +134,20 @@ def enregistrer_achat():
             "quantite": 0,
             "achats": []
         }
-
+    # Mise à jour de la quantité
     stock[nom]["quantite"] += quantite
+    
+    # enregistrement détaillé de l'achat
     stock[nom]["achats"].append({
-        "quantite": quantite,
-        "prix": prix,
+        "quantite": quantite,              # en g
+        "prix": prix_total,                # prix total payé (calculé)
+        "prix_unitaire": prix_unitaire,    # prix par kg (référence)
+        "unite_prix": "€/kg",              # unité du prix
         "fournisseur": fournisseur,
         "date": date
     })
-
+    
+    # Sauvegarde
     with open("stock.json", "w") as f:
         json.dump(stock, f, indent=2)
 
