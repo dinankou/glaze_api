@@ -251,28 +251,36 @@ document.getElementById("form-simulation").addEventListener("submit", e => {
 });
 
 //////////////////////////////////////////////
-// lance une production réelle
+// lance une production réelle (avec confirmation)
 //////////////////////////////////////////////
 
-async function lancerProduction(recette, masse) {
+async function lancerProduction(recette, masse, confirmer = false) {
   try {
     const res = await fetch(`${API_URL}/produire`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ recette, masse })
+      body: JSON.stringify({ recette, masse, confirmer })
     });
 
     const data = await res.json();
-    document.getElementById("resultat-production").textContent = data.message || "Production enregistrée.";
+
+    // Cas : stock trop bas → proposer de confirmer
+    if (data.alerte && !confirmer) {
+      const ok = confirm(`${data.message}\n\nSouhaitez-vous produire quand même ?`);
+      if (ok) {
+        // Relance la production avec confirmation
+        return lancerProduction(recette, masse, true);
+      } else {
+        document.getElementById("resultat-production").textContent = "Production annulée par l'utilisateur.";
+        return;
+      }
+    }
+
+    // Message final (OK ou erreur)
+    document.getElementById("resultat-production").textContent = data.message || "Production effectuée.";
+
   } catch (err) {
     console.error(err);
     alert("Erreur lors de la production.");
   }
 }
-
-document.getElementById("form-production").addEventListener("submit", e => {
-  e.preventDefault();
-  const recette = document.getElementById("prod-recette").value.trim();
-  const masse = parseFloat(document.getElementById("prod-masse").value);
-  if (recette && masse > 0) lancerProduction(recette, masse);
-});
