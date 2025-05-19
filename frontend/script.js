@@ -91,10 +91,17 @@ async function chargerRecettes() {
 // Convertit un texte "silice:40, kaolin:30" → {silice: 40, kaolin: 30}
 function parseComposition(text) {
   const obj = {};
-  text.split(",").forEach(entry => {
+
+  // Sépare par virgule, point-virgule, retour à la ligne ou tabulation
+  const lignes = text.split(/[\n\r,;]+/);
+
+  lignes.forEach(entry => {
     const [cle, val] = entry.split(":").map(e => e.trim());
-    if (cle && !isNaN(parseFloat(val))) obj[cle] = parseFloat(val);
+    if (cle && !isNaN(parseFloat(val))) {
+      obj[cle] = parseFloat(val);
+    }
   });
+
   return obj;
 }
 
