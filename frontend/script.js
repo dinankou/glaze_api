@@ -37,9 +37,17 @@ async function chargerStock() {
 }
 
 
-// Attache l'événement "click" au bouton une fois la page chargée
+// Attache l'événement "click" aux boutons une fois la page chargée
 document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("btn-stock").addEventListener("click", chargerStock);
+  const btnStock = document.getElementById("btn-stock");
+  if (btnStock) {
+    btnStock.addEventListener("click", chargerStock);
+  }
+
+  const btnRecettes = document.getElementById("btn-recettes");
+  if (btnRecettes) {
+    btnRecettes.addEventListener("click", chargerRecettes);
+  }
 });
 
 //////////////////////////////////////////////
@@ -75,7 +83,6 @@ async function chargerRecettes() {
   }
 }
 
-document.getElementById("btn-recettes").addEventListener("click", chargerRecettes);
 
 //////////////////////////////////////////////
 // ajoute une recette
