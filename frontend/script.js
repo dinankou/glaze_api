@@ -198,16 +198,26 @@ async function simulerProduction(recette, masse) {
     // Affichage formaté
     let sortie = `Recette : ${data.recette}\nMasse demandée : ${data.demande} g\n\n`;
 
-    data.details.forEach(item => {
-      sortie += `${item.matiere} — ${item.quantite_necessaire} g requis\n`;
-      sortie += `Disponible : ${item.disponible} g\n`;
-      sortie += `Statut : ${item.statut} (${item.couleur})\n\n`;
-    });
+  const couleurMap = {
+  "vert": "green",
+  "orange": "orange",
+  "rouge": "red",
+  "noir": "black"
+};
+
+  data.details.forEach(item => {
+  const statutHTML = `<strong style="color:${couleurMap[item.couleur]}">${item.statut}</strong>`;
+
+  sortie += `${item.matiere} — ${item.quantite_necessaire} g requis\n`;
+  sortie += `Disponible : ${item.disponible} g\n`;
+  sortie += `Statut : ${statutHTML}\n\n`;
+});
+
 
     sortie += `Production possible : ${data.production_possible ? "✅ OUI" : "❌ NON"}\n`;
     sortie += `Quantité max possible : ${data.production_maximale_possible} g`;
 
-    document.getElementById("resultat-simulation").textContent = sortie;
+    document.getElementById("resultat-simulation").innerHTML = sortie;
 
   } catch (err) {
     console.error(err);
