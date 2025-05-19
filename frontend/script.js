@@ -88,17 +88,21 @@ async function chargerRecettes() {
 // ajoute une recette
 //////////////////////////////////////////////
 
-// Convertit un texte "silice:40, kaolin:30" → {silice: 40, kaolin: 30}
+// Convertit un texte comme "Silice:40, kaolin:30" ou lignes séparées
+// en un objet { silice: 40, kaolin: 30 } avec noms forcés en minuscules
 function parseComposition(text) {
   const obj = {};
 
-  // Sépare par virgule, point-virgule, retour à la ligne ou tabulation
+  // 🔁 Sépare les lignes ou entrées par : virgule, point-virgule, retour à la ligne
   const lignes = text.split(/[\n\r,;]+/);
 
   lignes.forEach(entry => {
+    // 🔁 Sépare "nom:valeur" et supprime les espaces autour
     const [cle, val] = entry.split(":").map(e => e.trim());
+
+    // ✅ Si la clé existe et que la valeur est un nombre → ajoute à l'objet
     if (cle && !isNaN(parseFloat(val))) {
-      obj[cle] = parseFloat(val);
+      obj[cle.toLowerCase()] = parseFloat(val); // nom en minuscule
     }
   });
 
@@ -124,7 +128,7 @@ async function ajouterRecette(data) {
 document.getElementById("form-recette").addEventListener("submit", e => {
   e.preventDefault();
 
-  const nom = document.getElementById("recette-nom").value.trim();
+  const nom = document.getElementById("recette-nom").value.trim().toLowerCase();
   const base = parseComposition(document.getElementById("recette-base").value);
   const oxydes = parseComposition(document.getElementById("recette-oxydes").value);
 
@@ -157,7 +161,7 @@ async function ajouterMatiere(nom, type) {
 // Intercepte le formulaire
 document.getElementById("form-ajout").addEventListener("submit", e => {
   e.preventDefault();
-  const nom = document.getElementById("nom").value.trim();
+  const nom = document.getElementById("nom").value.trim().toLowerCase();
   const type = document.getElementById("type").value;
   if (nom) ajouterMatiere(nom, type);
 });
@@ -185,7 +189,7 @@ async function enregistrerAchat(data) {
 document.getElementById("form-achat").addEventListener("submit", e => {
   e.preventDefault();
   const data = {
-    nom: document.getElementById("achat-nom").value.trim(),
+    nom: document.getElementById("achat-nom").value.trim().toLowerCase(),
     quantite: parseFloat(document.getElementById("achat-quantite").value),
     prix: parseFloat(document.getElementById("achat-prix").value),
     fournisseur: document.getElementById("achat-fournisseur").value.trim(),
