@@ -37,7 +37,7 @@ async function chargerStock() {
 }
 
 
-// Attache l'événement "click" aux boutons une fois la page chargée
+// Attache les événements une fois le DOM chargé
 document.addEventListener("DOMContentLoaded", () => {
   const btnStock = document.getElementById("btn-stock");
   if (btnStock) {
@@ -47,6 +47,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnRecettes = document.getElementById("btn-recettes");
   if (btnRecettes) {
     btnRecettes.addEventListener("click", chargerRecettes);
+  }
+
+  const formProduction = document.getElementById("form-production");
+  if (formProduction) {
+    formProduction.addEventListener("submit", e => {
+      e.preventDefault();
+      const recette = document.getElementById("prod-recette").value.trim();
+      const masse = parseFloat(document.getElementById("prod-masse").value);
+      if (recette && masse > 0) {
+        lancerProduction(recette, masse);
+      }
+    });
   }
 });
 
