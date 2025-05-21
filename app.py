@@ -16,11 +16,11 @@ db = SQLAlchemy(app)
 from models import Matiere, Achat, Recette, Composition
 
 # ❗ Code JSON existant (à supprimer plus tard)
-DATA_FILE = "recettes.json"
-
-if not os.path.exists(DATA_FILE):
-    with open(DATA_FILE, "w") as f:
-        json.dump([], f)
+#DATA_FILE = "recettes.json"
+#
+#if not os.path.exists(DATA_FILE):
+#    with open(DATA_FILE, "w") as f:
+#        json.dump([], f)
 
 # ==========================================
 #   ROUTE RECETTES
