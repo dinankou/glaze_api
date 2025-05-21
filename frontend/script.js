@@ -322,18 +322,20 @@ async function lancerProduction(recette, masse, confirmer = true) {
     const data = await res.json();
     console.log("✅ Réponse production :", data);
 
-    // Masquer le bloc de confirmation s'il était visible
+    // Masquer le bloc de confirmation s'il existe
     const confirmationBlock = document.getElementById("confirmation-block");
     if (confirmationBlock) {
       confirmationBlock.style.display = "none";
     }
 
-    document.getElementById("resultat-production").textContent =
-      data.message || "Production effectuée.";
+    // Afficher le message de confirmation uniquement si l'élément existe
+    const resProd = document.getElementById("resultat-production");
+    if (resProd) {
+      resProd.textContent = data.message || "Production effectuée.";
+    }
+
   } catch (err) {
     console.error("Erreur production :", err);
     alert("Erreur lors de la production.");
   }
 }
-
-
