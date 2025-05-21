@@ -303,3 +303,37 @@ console.log("✅ Résultat simulation :", sortie);
   }
 }
 
+//Lance la production
+
+let recetteEnCours = "";
+let masseEnCours = 0;
+
+async function lancerProduction(recette, masse, confirmer = true) {
+  recetteEnCours = recette;
+  masseEnCours = masse;
+
+  try {
+    const res = await fetch(`${API_URL}/produire`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ recette, masse, confirmer })
+    });
+
+    const data = await res.json();
+    console.log("✅ Réponse production :", data);
+
+    // Masquer le bloc de confirmation s'il était visible
+    const confirmationBlock = document.getElementById("confirmation-block");
+    if (confirmationBlock) {
+      confirmationBlock.style.display = "none";
+    }
+
+    document.getElementById("resultat-production").textContent =
+      data.message || "Production effectuée.";
+  } catch (err) {
+    console.error("Erreur production :", err);
+    alert("Erreur lors de la production.");
+  }
+}
+
+
