@@ -37,27 +37,65 @@ async function chargerStock() {
 }
 
 
+//////////////////////////////////////////////
 // Attache les événements une fois le DOM chargé
+//////////////////////////////////////////////
+
 document.addEventListener("DOMContentLoaded", () => {
+  // 🔁 Bouton "Charger le stock"
   const btnStock = document.getElementById("btn-stock");
   if (btnStock) {
     btnStock.addEventListener("click", chargerStock);
   }
 
+  // 🔁 Bouton "Afficher les recettes"
   const btnRecettes = document.getElementById("btn-recettes");
   if (btnRecettes) {
     btnRecettes.addEventListener("click", chargerRecettes);
   }
 
-  const formProduction = document.getElementById("form-production");
-  if (formProduction) {
-    formProduction.addEventListener("submit", e => {
+  // 🔁 Formulaire de simulation de production
+  const formSimulation = document.getElementById("form-simulation");
+  if (formSimulation) {
+    formSimulation.addEventListener("submit", e => {
       e.preventDefault();
-      const recette = document.getElementById("prod-recette").value.trim();
-      const masse = parseFloat(document.getElementById("prod-masse").value);
+      const recette = document.getElementById("simul-recette").value.trim();
+      const masse = parseFloat(document.getElementById("simul-masse").value);
       if (recette && masse > 0) {
-        lancerProduction(recette, masse);
+        simulerProduction(recette, masse);
       }
+    });
+  }
+
+  // 🔁 Bouton "Produire cette recette" après simulation
+  const btnLancerProd = document.getElementById("btn-lancer-prod");
+  if (btnLancerProd) {
+    btnLancerProd.addEventListener("click", () => {
+      const recette = btnLancerProd.dataset.recette;
+      const masse = parseFloat(btnLancerProd.dataset.masse);
+      const alerte = btnLancerProd.dataset.alerte === "true";
+
+      if (alerte) {
+        lancerProduction(recette, masse, false); // demande confirmation
+      } else {
+        lancerProduction(recette, masse, true);  // production directe
+      }
+    });
+  }
+
+  // 🔁 Bloc de confirmation (bouton oui / non)
+  const btnConfirmer = document.getElementById("btn-confirmer");
+  if (btnConfirmer) {
+    btnConfirmer.addEventListener("click", () => {
+      lancerProduction(recetteEnCours, masseEnCours, true);
+    });
+  }
+
+  const btnAnnuler = document.getElementById("btn-annuler");
+  if (btnAnnuler) {
+    btnAnnuler.addEventListener("click", () => {
+      document.getElementById("confirmation-block").style.display = "none";
+      document.getElementById("resultat-production").textContent = "Production annulée.";
     });
   }
 });
@@ -222,7 +260,7 @@ async function simulerProduction(recette, masse) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ recette, masse })
     });
-
+console.log("⏳ Simulation lancée pour", recette, masse);
     const data = await res.json();
 
     // Affichage formaté
@@ -244,7 +282,7 @@ async function simulerProduction(recette, masse) {
 
     sortie += `Production possible : ${data.production_possible ? "✅ OUI" : "❌ NON"}\n`;
     sortie += `Quantité max possible : ${data.production_maximale_possible} g`;
-
+console.log("✅ Résultat simulation :", sortie);
     document.getElementById("resultat-simulation").innerHTML = sortie;
 
     // 🔁 Affiche ou cache le bouton "Produire"
