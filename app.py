@@ -32,24 +32,23 @@ from models import Matiere, Achat, Recette, Composition
 @app.route("/ajouter_matiere", methods=["POST"])
 def ajouter_matiere():
     data = request.get_json()
-    nom = data.get("nom")
-    mat_type = data.get("type", "base").lower()
-    unite = data.get("unite", "g")
-
-    # Validation du type
+    # on normalise nom et type
+    nom = data.get("nom", "").strip().lower()
+    mat_type = data.get("type", "base").strip().lower()
+    unite = data.get("unite", "g").strip()
+    # validation
+    if not nom:
+        return jsonify({"message": "Le nom est requis."}), 400
     if mat_type not in ["base", "oxyde"]:
         return jsonify({"message": "Type invalide. Utilisez 'base' ou 'oxyde'."}), 400
-
-    # Vérifier si la matière existe déjà
+    # détection d'existence en minuscules
     existante = Matiere.query.filter_by(nom=nom).first()
     if existante:
         return jsonify({"message": "La matière existe déjà."}), 400
-
-    # Création et insertion
+    # création
     nouvelle = Matiere(nom=nom, type=mat_type, unite=unite, quantite=0.0)
     db.session.add(nouvelle)
     db.session.commit()
-
     return jsonify({"message": f"Matière '{nom}' ajoutée avec succès."}), 201
 
 # ==========================================
