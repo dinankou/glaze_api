@@ -9,6 +9,7 @@ CORS(app)
 
 # ✅ Configuration PostgreSQL via Railway
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
+print("→ DEBUG: SQLALCHEMY_DATABASE_URI =", app.config['SQLALCHEMY_DATABASE_URI'])
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # ✅ Initialisation de SQLAlchemy
