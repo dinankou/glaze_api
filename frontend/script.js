@@ -275,9 +275,10 @@ async function lancerProduction(recette, masse, confirmer = false) {
     });
 
     const data = await res.json();
+    console.log("Réponse production :", data); // 🔍 debug
 
     // Cas : stock trop bas → proposer de confirmer
-    if (data.alerte && !confirmer) {
+    if (data.alerte === true && !confirmer) {
       const ok = confirm(`${data.message}\n\nSouhaitez-vous produire quand même ?`);
       if (ok) {
         // Relance la production avec confirmation
@@ -292,7 +293,7 @@ async function lancerProduction(recette, masse, confirmer = false) {
     document.getElementById("resultat-production").textContent = data.message || "Production effectuée.";
 
   } catch (err) {
-    console.error(err);
+    console.error("Erreur production :", err);
     alert("Erreur lors de la production.");
   }
 }
