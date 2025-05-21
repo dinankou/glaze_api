@@ -1,19 +1,21 @@
+# app.py
 from flask import Flask, request, jsonify
-from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
-import json
-import os
+import os, json
+
+from extensions import db  # ← nouveau
 
 app = Flask(__name__)
 CORS(app)
 
-# ✅ Configuration PostgreSQL via Railway
+# Config PostgreSQL
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
-print("→ DEBUG: SQLALCHEMY_DATABASE_URI =", app.config['SQLALCHEMY_DATABASE_URI'])
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# ✅ Initialisation de SQLAlchemy
-db = SQLAlchemy(app)
+# On initialise SQLAlchemy **sans** le passer au constructeur
+db.init_app(app)
+
+# Ensuite seulement on importe les modèles
 from models import Matiere, Achat, Recette, Composition
 
 # ❗ Code JSON existant (à supprimer plus tard)
@@ -409,21 +411,11 @@ if False:  # Désactive tout le bloc JSON
 
 @app.route("/init_db", methods=["POST"])
 def init_db():
-    try:
+    with app.app_context():
         db.create_all()
-        return jsonify({"message": "Base de données initialisée avec succès."}), 201
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    return jsonify({"message": "Base initialisée."}), 201
 
-# ==========================================
-# 🚀 Point d'entrée : lance le serveur Flask
-# Utilise le port fourni par Railway ou 5000 en local
-# ==========================================
-
+# point d’entrée
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-    
-
-
-
