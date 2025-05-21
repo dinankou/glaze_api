@@ -273,7 +273,7 @@ async function lancerProduction(recette, masse, confirmer = false) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ recette, masse, confirmer })
     });
-
+console.log("Tentative de production", recette, masse, confirmer);
     const data = await res.json();
     console.log("Réponse production :", data); // 🔍 debug
 
