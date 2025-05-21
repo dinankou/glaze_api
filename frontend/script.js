@@ -278,7 +278,7 @@ console.log("Tentative de production", recette, masse, confirmer);
     console.log("Réponse production :", data); // 🔍 debug
 
     // Cas : stock trop bas → proposer de confirmer
-    if (data.alerte === true && !confirmer) {
+    if (data.alerte && !confirmer) {
       const ok = confirm(`${data.message}\n\nSouhaitez-vous produire quand même ?`);
       if (ok) {
         // Relance la production avec confirmation
