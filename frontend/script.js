@@ -1,6 +1,6 @@
 // URL de base de l'API (hébergée sur Railway)
 const API_URL = "https://glazeapi-production.up.railway.app";
-
+console.log("✅ script.js chargé");
 //////////////////////////////////////////////
 // Fonction pour charger et afficher le stock
 /////////////////////////////////////////////
@@ -265,7 +265,7 @@ document.getElementById("form-simulation").addEventListener("submit", e => {
 //////////////////////////////////////////////
 // lance une production réelle (avec confirmation)
 //////////////////////////////////////////////
-
+console.log("Tentative de production", recette, masse, confirmer);
 async function lancerProduction(recette, masse, confirmer = false) {
   try {
     const res = await fetch(`${API_URL}/produire`, {
