@@ -265,7 +265,7 @@ document.getElementById("form-simulation").addEventListener("submit", e => {
 //////////////////////////////////////////////
 // lance une production réelle (avec confirmation)
 //////////////////////////////////////////////
-console.log("Tentative de production", recette, masse, confirmer);
+
 async function lancerProduction(recette, masse, confirmer = false) {
   try {
     const res = await fetch(`${API_URL}/produire`, {
