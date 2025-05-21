@@ -155,6 +155,67 @@ def consulter_stock():
     }), 200
 
 # ==========================================
+#   ROUTE HISTORIQUE ACHATS
+# ==========================================
+@app.route("/historique_achats", methods=["GET"])
+def historique_achats():
+    # 1. On récupère toutes les lignes Achat + Matiere
+    rows = (
+        db.session.query(
+            Achat.quantite,
+            Achat.prix,
+            Achat.fournisseur,
+            Achat.date,
+            Matiere.nom,
+            Matiere.type
+        )
+        .join(Matiere, Achat.matiere_id == Matiere.id)
+        .order_by(Achat.date.desc())
+        .all()
+    )
+
+    # 2. Préparation du résultat
+    result = {
+        "bases": {
+            "achats": [],
+            "prix_par_matiere": {},
+            "total_prix": 0.0
+        },
+        "oxydes": {
+            "achats": [],
+            "prix_par_matiere": {},
+            "total_prix": 0.0
+        }
+    }
+
+    # 3. Remplissage
+    for quantite, prix, fournisseur, date, nom_mat, m_type in rows:
+        cat = "bases" if m_type == "base" else "oxydes"
+
+        # 3a. Détail de l'achat
+        result[cat]["achats"].append({
+            "nom": nom_mat,
+            "quantite": quantite,
+            "prix": prix,
+            "fournisseur": fournisseur,
+            "date": date.isoformat()
+        })
+
+        # 3b. Cumul prix par matière
+        prix_pm = result[cat]["prix_par_matiere"].get(nom_mat, 0.0) + prix
+        result[cat]["prix_par_matiere"][nom_mat] = round(prix_pm, 2)
+
+        # 3c. Cumul total
+        result[cat]["total_prix"] += prix
+
+    # 4. Arrondir les totaux
+    result["bases"]["total_prix"] = round(result["bases"]["total_prix"], 2)
+    result["oxydes"]["total_prix"] = round(result["oxydes"]["total_prix"], 2)
+
+    return jsonify(result), 200
+
+
+# ==========================================
 #              SIMULE UNE PRODUCTION
 # ==========================================
 
