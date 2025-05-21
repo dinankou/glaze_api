@@ -411,6 +411,11 @@ def produire():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-
-with app.app_context():
-    db.create_all()
+    
+@app.route("/init_db", methods=["POST"])
+def init_db():
+    try:
+        db.create_all()
+        return jsonify({"message": "Base de données initialisée avec succès."}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
