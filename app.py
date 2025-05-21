@@ -129,6 +129,30 @@ def enregistrer_achat():
 #              AFFICHE LE STOCK
 # ==========================================
 
+@app.route("/stock", methods=["GET"])
+def consulter_stock():
+    # 1. Requête : toutes les matières triées par quantité décroissante
+    matieres = Matiere.query.order_by(Matiere.quantite.desc()).all()
+
+    # 2. Séparation et formatage
+    bases = []
+    oxydes = []
+    for m in matieres:
+        entry = {
+            "nom": m.nom,
+            "type": m.type,
+            "quantite": m.quantite
+        }
+        if m.type == "base":
+            bases.append(entry)
+        else:
+            oxydes.append(entry)
+
+    # 3. Retour JSON
+    return jsonify({
+        "bases": bases,
+        "oxydes": oxydes
+    }), 200
 
 # ==========================================
 #              SIMULE UNE PRODUCTION
