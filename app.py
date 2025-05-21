@@ -54,7 +54,67 @@ def ajouter_matiere():
 # ==========================================
 #              ROUTE ACHATS
 # ==========================================
+@app.route("/achat", methods=["POST"])
+def enregistrer_achat():
+    data = request.get_json()
+    nom = data.get("nom", "").strip().lower()
+    quantite = data.get("quantite")
+    prix = data.get("prix")
+    fournisseur = data.get("fournisseur", "").strip()
+    date_str = data.get("date")
+    type_matiere = data.get("type")  # pas de default ici
 
+    # 1️⃣ Validation des champs obligatoires
+    if not nom or quantite is None or prix is None:
+        return jsonify({"message": "Champs requis : nom, quantite, prix"}), 400
+
+    # 2️⃣ Recherche de la matière
+    matiere = Matiere.query.filter_by(nom=nom).first()
+
+    # 3️⃣ Si la matière n'existe pas, on doit avoir un type valide
+    if not matiere:
+        if not type_matiere or type_matiere.strip().lower() not in ["base", "oxyde"]:
+            return jsonify({
+                "message": "Matière inconnue. Veuillez préciser un champ 'type' valant 'base' ou 'oxyde'."
+            }), 400
+
+        # On normalise et crée la matière
+        type_matiere = type_matiere.strip().lower()
+        matiere = Matiere(
+            nom=nom,
+            type=type_matiere,
+            unite=data.get("unite", "g").strip(),
+            quantite=0.0
+        )
+        db.session.add(matiere)
+        db.session.flush()  # pour récupérer matiere.id
+
+    # 4️⃣ Parsing de la date
+    try:
+        date = datetime.strptime(date_str, "%Y-%m-%d").date() if date_str else datetime.utcnow().date()
+    except ValueError:
+        return jsonify({"message": "Format de date invalide, attendu YYYY-MM-DD"}), 400
+
+    # 5️⃣ Création de l'achat
+    achat = Achat(
+        matiere_id = matiere.id,
+        quantite    = quantite,
+        prix        = prix,
+        fournisseur = fournisseur,
+        date        = date
+    )
+    db.session.add(achat)
+
+    # 6️⃣ Mise à jour du stock
+    matiere.quantite += quantite
+
+    # 7️⃣ Commit final
+    db.session.commit()
+
+    return jsonify({
+        "message": f"Achat de {quantite}g pour '{matiere.nom}' enregistré.",
+        "stock_restant": matiere.quantite
+    }), 201
 
 # ==========================================
 #              AFFICHE LE STOCK
