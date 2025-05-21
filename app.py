@@ -208,7 +208,7 @@ def simuler_production():
 
     resultats = []
     stock_insuffisant = False
-    min_ratio = 1  # pour calculer la prod max possible
+    min_ratio = float("inf")  # pour calculer la prod max possible
 
     # Fusionner base et oxydes dans une seule dict {nom: pourcentage}
     composants = recette["base"].copy()
@@ -246,21 +246,20 @@ def simuler_production():
             statut = "**INSUFFISANT**"
             couleur = "noir"
             stock_insuffisant = True
-            ratio = quantite_disponible / masse_necessaire if masse_necessaire > 0 else 0
         elif reste_apres_prod < seuil_rouge:
             statut = "**OK**"
             couleur = "rouge"
-            ratio = 1
         elif reste_apres_prod < seuil_orange:
             statut = "**OK**"
             couleur = "orange"
-            ratio = 1
         else:
             statut = "**OK**"
             couleur = "vert"
-            ratio = 1
 
-        min_ratio = min(min_ratio, quantite_disponible / masse_necessaire) if masse_necessaire > 0 else min_ratio
+        if masse_necessaire > 0:
+            ratio = quantite_disponible / masse_necessaire
+            min_ratio = min(min_ratio, ratio)
+
 
         resultats.append({
             "matiere": matiere,
