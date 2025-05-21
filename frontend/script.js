@@ -212,7 +212,7 @@ document.getElementById("form-achat").addEventListener("submit", e => {
 });
 
 //////////////////////////////////////////////
-// simule une production
+// simule une production + propose la production
 //////////////////////////////////////////////
 
 async function simulerProduction(recette, masse) {
@@ -228,26 +228,36 @@ async function simulerProduction(recette, masse) {
     // Affichage formaté
     let sortie = `Recette : ${data.recette}\nMasse demandée : ${data.demande} g\n\n`;
 
-  const couleurMap = {
-  "vert": "green",
-  "orange": "orange",
-  "rouge": "red",
-  "noir": "black"
-};
+    const couleurMap = {
+      "vert": "green",
+      "orange": "orange",
+      "rouge": "red",
+      "noir": "black"
+    };
 
-  data.details.forEach(item => {
-  const statutHTML = `<strong style="color:${couleurMap[item.couleur]}">${item.statut}</strong>`;
-
-  sortie += `${item.matiere} — ${item.quantite_necessaire} g requis\n`;
-  sortie += `Disponible : ${item.disponible} g\n`;
-  sortie += `Statut : ${statutHTML}\n\n`;
-});
-
+    data.details.forEach(item => {
+      const statutHTML = `<strong style="color:${couleurMap[item.couleur]}">${item.statut}</strong>`;
+      sortie += `${item.matiere} — ${item.quantite_necessaire} g requis\n`;
+      sortie += `Disponible : ${item.disponible} g\n`;
+      sortie += `Statut : ${statutHTML}\n\n`;
+    });
 
     sortie += `Production possible : ${data.production_possible ? "✅ OUI" : "❌ NON"}\n`;
     sortie += `Quantité max possible : ${data.production_maximale_possible} g`;
 
     document.getElementById("resultat-simulation").innerHTML = sortie;
+
+    // 🔁 Affiche ou cache le bouton "Produire"
+    const boutonProd = document.getElementById("btn-lancer-prod");
+
+    if (data.production_possible) {
+      boutonProd.style.display = "inline-block";
+      boutonProd.dataset.recette = data.recette;
+      boutonProd.dataset.masse = data.demande;
+      boutonProd.dataset.alerte = data.alerte; // true/false
+    } else {
+      boutonProd.style.display = "none";
+    }
 
   } catch (err) {
     console.error(err);
@@ -255,67 +265,3 @@ async function simulerProduction(recette, masse) {
   }
 }
 
-document.getElementById("form-simulation").addEventListener("submit", e => {
-  e.preventDefault();
-  const recette = document.getElementById("simul-recette").value.trim();
-  const masse = parseFloat(document.getElementById("simul-masse").value);
-  if (recette && masse > 0) simulerProduction(recette, masse);
-});
-
-//////////////////////////////////////////////
-// lance une production réelle (avec confirmation)
-//////////////////////////////////////////////
-//
-//async function lancerProduction(recette, masse, confirmer = false) {
-//  try {
-//    const res = await fetch(`${API_URL}/produire`, {
-//      method: "POST",
-//      headers: { "Content-Type": "application/json" },
-//      body: JSON.stringify({ recette, masse, confirmer })
-//    });
-//console.log("Tentative de production", recette, masse, confirmer);
-//    const data = await res.json();
-//    console.log("Réponse production :", data); // 🔍 debug
-//
-//    // Cas : stock trop bas → proposer de confirmer
-//    if (data.alerte && !confirmer) {
-//      const ok = confirm(`${data.message}\n\nSouhaitez-vous produire quand même ?`);
-//      if (ok) {
-//        // Relance la production avec confirmation
-//        return lancerProduction(recette, masse, true);
-//      } else {
-//        document.getElementById("resultat-production").textContent = "Production annulée par l'utilisateur.";
-//        return;
-//      }
-//    }
-//
-//    // Message final (OK ou erreur)
-//    document.getElementById("resultat-production").textContent = data.message || "Production effectuée.";
-//
-//  } catch (err) {
-//    console.error("Erreur production :", err);
-//    alert("Erreur lors de la production.");
-//  }
-//}
-//////////////////////////////////////////////
-// lance une production réelle (sans confirmation)
-//////////////////////////////////////////////
-
-async function lancerProduction(recette, masse) {
-  try {
-    const res = await fetch(`${API_URL}/produire`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ recette, masse, confirmer: true }) // ⬅️ forçage direct
-    });
-
-    const data = await res.json();
-    console.log("🧪 Réponse production :", data);
-
-    document.getElementById("resultat-production").textContent = data.message || "Production effectuée.";
-
-  } catch (err) {
-    console.error("Erreur production :", err);
-    alert("Erreur lors de la production.");
-  }
-}
