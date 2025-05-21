@@ -41,7 +41,7 @@ def ajouter_recette():
         return jsonify({"message": "Le champ 'base' doit être un dictionnaire non vide."}), 400
     total_base = sum(base.values())
     if total_base != 100:
-        return jsonify({"message": f"La somme des pourcentages de base doit être 100 %, obtenu : {total_base} %."}), 400
+        return jsonify({"message": f"La somme des % de base doit être 100 %, obtenu : {total_base} %."}), 400
     if not isinstance(oxydes, dict):
         return jsonify({"message": "Le champ 'oxydes' doit être un dictionnaire (peut être vide)."}), 400
 
@@ -50,11 +50,19 @@ def ajouter_recette():
     db.session.add(recette)
     db.session.flush()  # pour avoir recette.id
 
-    # 4. Ajout des compositions (bases)
-    for nom_mat, pct in base.items():
-        mat = Matiere.query.filter_by(nom=nom_mat.strip().lower()).first()
+    # 4. Fonction utilitaire : récupérer ou créer une Matiere
+    def get_or_create_matiere(nom_mat, type_matiere):
+        key = nom_mat.strip().lower()
+        mat = Matiere.query.filter_by(nom=key).first()
         if not mat:
-            return jsonify({"message": f"Matière de base '{nom_mat}' introuvable."}), 404
+            mat = Matiere(nom=key, type=type_matiere, unite="g", quantite=0.0)
+            db.session.add(mat)
+            db.session.flush()
+        return mat
+
+    # 5. Ajout des compositions (bases)
+    for nom_mat, pct in base.items():
+        mat = get_or_create_matiere(nom_mat, "base")
         comp = Composition(
             recette_id=recette.id,
             matiere_id=mat.id,
@@ -63,11 +71,9 @@ def ajouter_recette():
         )
         db.session.add(comp)
 
-    # 5. Ajout des compositions (oxydes)
+    # 6. Ajout des compositions (oxydes)
     for nom_mat, pct in oxydes.items():
-        mat = Matiere.query.filter_by(nom=nom_mat.strip().lower()).first()
-        if not mat:
-            return jsonify({"message": f"Oxyde '{nom_mat}' introuvable."}), 404
+        mat = get_or_create_matiere(nom_mat, "oxyde")
         comp = Composition(
             recette_id=recette.id,
             matiere_id=mat.id,
@@ -76,10 +82,19 @@ def ajouter_recette():
         )
         db.session.add(comp)
 
-    # 6. Commit final
+    # 7. Commit final
     db.session.commit()
 
-    return jsonify({"message": f"Recette '{nom}' créée avec {len(base)} bases et {len(oxydes)} oxydes."}), 201
+    return jsonify({
+        "message": f"Recette '{nom}' créée avec {len(base)} bases et {len(oxydes)} oxydes.",
+        "matières_créées": [
+            m.nom for m in 
+            filter(lambda m: m.quantite == 0.0, 
+                   Matiere.query.filter(Matiere.nom.in_(
+                       [*map(str.lower, base.keys()), *map(str.lower, oxydes.keys())]
+                   )).all())
+        ]
+    }), 201
 
 
 # ==========================================
