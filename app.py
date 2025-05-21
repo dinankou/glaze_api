@@ -12,6 +12,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # ✅ Initialisation de SQLAlchemy
 db = SQLAlchemy(app)
+from models import Matiere, Achat, Recette, Composition
 
 # ❗ Code JSON existant (à supprimer plus tard)
 DATA_FILE = "recettes.json"
@@ -409,3 +410,6 @@ def produire():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+
+with app.app_context():
+    db.create_all()
