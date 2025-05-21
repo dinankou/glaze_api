@@ -6,6 +6,14 @@ import os
 app = Flask(__name__)
 CORS(app)
 
+# ✅ Configuration PostgreSQL via Railway
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# ✅ Initialisation de SQLAlchemy
+db = SQLAlchemy(app)
+
+# ❗ Code JSON existant (à supprimer plus tard)
 DATA_FILE = "recettes.json"
 
 if not os.path.exists(DATA_FILE):
