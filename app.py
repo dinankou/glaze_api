@@ -20,10 +20,66 @@ from models import Matiere, Achat, Recette, Composition
 
 
 # ==========================================
-#   ROUTE RECETTES
+#   ROUTE AJOUTER RECETTES
 # ==========================================
 
+@app.route("/ajouter_recette", methods=["POST"])
+def ajouter_recette():
+    data = request.get_json() or {}
+    nom = data.get("nom", "").strip()
+    base = data.get("base", {})
+    oxydes = data.get("oxydes", {})
 
+    # 1. Validation du nom
+    if not nom:
+        return jsonify({"message": "Le champ 'nom' est requis."}), 400
+    if Recette.query.filter_by(nom=nom).first():
+        return jsonify({"message": f"Recette '{nom}' existe déjà."}), 400
+
+    # 2. Validation des pourcentages
+    if not isinstance(base, dict) or not base:
+        return jsonify({"message": "Le champ 'base' doit être un dictionnaire non vide."}), 400
+    total_base = sum(base.values())
+    if total_base != 100:
+        return jsonify({"message": f"La somme des pourcentages de base doit être 100 %, obtenu : {total_base} %."}), 400
+    if not isinstance(oxydes, dict):
+        return jsonify({"message": "Le champ 'oxydes' doit être un dictionnaire (peut être vide)."}), 400
+
+    # 3. Création de la recette
+    recette = Recette(nom=nom)
+    db.session.add(recette)
+    db.session.flush()  # pour avoir recette.id
+
+    # 4. Ajout des compositions (bases)
+    for nom_mat, pct in base.items():
+        mat = Matiere.query.filter_by(nom=nom_mat.strip().lower()).first()
+        if not mat:
+            return jsonify({"message": f"Matière de base '{nom_mat}' introuvable."}), 404
+        comp = Composition(
+            recette_id=recette.id,
+            matiere_id=mat.id,
+            type="base",
+            pourcentage=float(pct)
+        )
+        db.session.add(comp)
+
+    # 5. Ajout des compositions (oxydes)
+    for nom_mat, pct in oxydes.items():
+        mat = Matiere.query.filter_by(nom=nom_mat.strip().lower()).first()
+        if not mat:
+            return jsonify({"message": f"Oxyde '{nom_mat}' introuvable."}), 404
+        comp = Composition(
+            recette_id=recette.id,
+            matiere_id=mat.id,
+            type="oxyde",
+            pourcentage=float(pct)
+        )
+        db.session.add(comp)
+
+    # 6. Commit final
+    db.session.commit()
+
+    return jsonify({"message": f"Recette '{nom}' créée avec {len(base)} bases et {len(oxydes)} oxydes."}), 201
 
 
 # ==========================================
