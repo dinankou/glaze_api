@@ -265,31 +265,53 @@ document.getElementById("form-simulation").addEventListener("submit", e => {
 //////////////////////////////////////////////
 // lance une production réelle (avec confirmation)
 //////////////////////////////////////////////
+//
+//async function lancerProduction(recette, masse, confirmer = false) {
+//  try {
+//    const res = await fetch(`${API_URL}/produire`, {
+//      method: "POST",
+//      headers: { "Content-Type": "application/json" },
+//      body: JSON.stringify({ recette, masse, confirmer })
+//    });
+//console.log("Tentative de production", recette, masse, confirmer);
+//    const data = await res.json();
+//    console.log("Réponse production :", data); // 🔍 debug
+//
+//    // Cas : stock trop bas → proposer de confirmer
+//    if (data.alerte && !confirmer) {
+//      const ok = confirm(`${data.message}\n\nSouhaitez-vous produire quand même ?`);
+//      if (ok) {
+//        // Relance la production avec confirmation
+//        return lancerProduction(recette, masse, true);
+//      } else {
+//        document.getElementById("resultat-production").textContent = "Production annulée par l'utilisateur.";
+//        return;
+//      }
+//    }
+//
+//    // Message final (OK ou erreur)
+//    document.getElementById("resultat-production").textContent = data.message || "Production effectuée.";
+//
+//  } catch (err) {
+//    console.error("Erreur production :", err);
+//    alert("Erreur lors de la production.");
+//  }
+//}
+//////////////////////////////////////////////
+// lance une production réelle (sans confirmation)
+//////////////////////////////////////////////
 
-async function lancerProduction(recette, masse, confirmer = false) {
+async function lancerProduction(recette, masse) {
   try {
     const res = await fetch(`${API_URL}/produire`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ recette, masse, confirmer })
+      body: JSON.stringify({ recette, masse, confirmer: true }) // ⬅️ forçage direct
     });
-console.log("Tentative de production", recette, masse, confirmer);
+
     const data = await res.json();
-    console.log("Réponse production :", data); // 🔍 debug
+    console.log("🧪 Réponse production :", data);
 
-    // Cas : stock trop bas → proposer de confirmer
-    if (data.alerte && !confirmer) {
-      const ok = confirm(`${data.message}\n\nSouhaitez-vous produire quand même ?`);
-      if (ok) {
-        // Relance la production avec confirmation
-        return lancerProduction(recette, masse, true);
-      } else {
-        document.getElementById("resultat-production").textContent = "Production annulée par l'utilisateur.";
-        return;
-      }
-    }
-
-    // Message final (OK ou erreur)
     document.getElementById("resultat-production").textContent = data.message || "Production effectuée.";
 
   } catch (err) {
