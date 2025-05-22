@@ -36,9 +36,16 @@ try {
     });
     const data    = await res.json();
     // affichage simplifié : qualité + lignes
-    msgEl.innerHTML = data.map(m =>
-      `<div>${m.nom}: <strong>${m.quantite.toFixed(2)}</strong> (${m.statut})</div>`
+    // on récupère le tableau "details" renvoyé par l’API
+    const details = data.details || [];
+    msgEl.innerHTML = details.map(d =>
+      `<div>
+         ${d.matiere}: 
+         <strong>${d.quantite_necessaire.toFixed(2)}g</strong> 
+         (${d.statut})
+       </div>`
     ).join('');
+
   } catch (err) {
     showMessage(msgEl, 'Échec simulation', true);
     console.error(err);
