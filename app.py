@@ -438,50 +438,67 @@ def simuler_production():
 # ─── 2) PRODUCTION RÉELLE ────────────────────────────────────────────────────
 @app.route("/produire", methods=["POST"])
 def produire():
+    """
+    Applique une production réelle :
+    - Reprend la simulation via simuler_production()
+    - Bloque si seuil noir atteint
+    - Avertit si seuil orange/rouge (override requis)
+    - Décrémente le stock si confirmé
+    """
     data = request.get_json() or {}
     nom_recette = data.get("recette")
     masse_totale = data.get("masse")
     override = data.get("override", False)
 
-    # validation
+    # 1) Validation
     if not nom_recette or masse_totale is None:
         return jsonify({"message": "Champs requis : 'recette' et 'masse'"}), 400
 
-    # on refait la simulation (même logique) pour obtenir détails
-    sim_resp = simuler_production().get_json()
-    details = sim_resp["details"]
+    # 2) Appel à la simulation (renvoie un tuple (response, status))
+    sim_response, sim_status = simuler_production()
+    if sim_status != 200:
+        return sim_response, sim_status
 
-    # interdit si noir
-    black_items = [d for d in details if d["couleur"]=="noir"]
-    if black_items:
+    sim_data = sim_response.get_json()
+    details = sim_data["details"]
+
+    # 3) Vérification seuil noir
+    black = [d for d in details if d["couleur"] == "noir"]
+    if black:
         return jsonify({
             "message": "Production impossible : stock trop bas pour certaines matières (seuil noir).",
-            "details": black_items
+            "details": black
         }), 400
 
-    # si pas override et qu'il y a du rouge/orange, on propose override
-    non_vert_items = [d for d in details if d["couleur"] in ("rouge","orange")]
-    if non_vert_items and not override:
+    # 4) Alerte orange/rouge
+    low = [d for d in details if d["couleur"] in ("rouge", "orange")]
+    if low and not override:
         return jsonify({
             "message": "Attention : stock bas pour certaines matières. Passez 'override': true pour confirmer.",
-            "details": non_vert_items
+            "details": low
         }), 200
 
-    # enfin, appliquer la production : décrémenter les stocks
+    # 5) Application de la production (décrémentation)
     for d in details:
         mt = Matiere.query.filter_by(nom=d["matiere"]).first()
-        mt.quantite = mt.quantite - d["quantite_necessaire"]
+        mt.quantite -= d["quantite_necessaire"]
 
     db.session.commit()
 
+    # 6) Construction de la réponse finale avec le stock après prod
+    stock_post = []
+    for d in details:
+        mt = Matiere.query.filter_by(nom=d["matiere"]).first()
+        stock_post.append({
+            "matiere": d["matiere"],
+            "nouveau_stock": round(mt.quantite, 2)
+        })
+
     return jsonify({
         "message": f"Production de {masse_totale}g de '{nom_recette}' réalisée avec succès.",
-        "stock_apres": [
-            {"matiere": d["matiere"], "nouveau_stock": round(Matiere.query.filter_by(nom=d["matiere"]).first().quantite,2)}
-            for d in details
-        ]
+        "stock_apres": stock_post
     }), 200
-
+    
 # ==========================================
 #   def init_db
 # ==========================================
