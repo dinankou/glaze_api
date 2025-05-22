@@ -310,8 +310,41 @@ def historique_achats():
 
 
 # ==========================================
-#              SIMULE UNE PRODUCTION
+#              AFFICHE LES RECETTES
 # ==========================================
+from flask import jsonify
+from extensions import db
+from models import Recette, Composition, Matiere
+
+@app.route("/recettes", methods=["GET"])
+def get_recettes():
+    """
+    Retourne la liste de toutes les recettes,
+    avec leurs compositions (bases / oxydes) et les URLs optionnelles.
+    """
+    recettes = Recette.query.order_by(Recette.nom).all()
+
+    result = []
+    for r in recettes:
+        # Construire deux dicts : base et oxydes
+        base = {}
+        oxydes = {}
+        for comp in r.compositions:
+            mat_nom = comp.matiere.nom
+            if comp.type == "base":
+                base[mat_nom] = comp.pourcentage
+            else:
+                oxydes[mat_nom] = comp.pourcentage
+
+        result.append({
+            "nom": r.nom,
+            "base": base,
+            "oxydes": oxydes,
+            "description_url": r.description_url,
+            "production_doc_url": r.production_doc_url
+        })
+
+    return jsonify(result), 200
 
 
 # ==========================================
