@@ -25,75 +25,98 @@ from models import Matiere, Achat, Recette, Composition
 
 @app.route("/ajouter_recette", methods=["POST"])
 def ajouter_recette():
+    """
+    Crée une nouvelle recette avec ses compositions.
+    Si une matière (base ou oxyde) n'existe pas, elle est créée automatiquement
+    avec un stock à 0.
+    Accepte en plus deux liens optionnels :
+      - description_url       : URL vers la description web de la recette
+      - production_doc_url    : URL Google Doc journalisant la production
+    """
+    # ─── 1. Lecture du payload JSON ────────────────────────────────────────────
     data = request.get_json() or {}
-    nom = data.get("nom", "").strip()
-    base = data.get("base", {})
-    oxydes = data.get("oxydes", {})
+    nom                 = data.get("nom", "").strip()
+    base                = data.get("base", {})
+    oxydes              = data.get("oxydes", {})
+    description_url     = data.get("description_url",  "").strip() or None
+    production_doc_url  = data.get("production_doc_url", "").strip() or None
 
-    # 1. Validation du nom
+    # ─── 2. Validations de base ───────────────────────────────────────────────
+    # 2.1. Nom requis et unique
     if not nom:
         return jsonify({"message": "Le champ 'nom' est requis."}), 400
     if Recette.query.filter_by(nom=nom).first():
         return jsonify({"message": f"Recette '{nom}' existe déjà."}), 400
 
-    # 2. Validation des pourcentages
+    # 2.2. La base doit être un dict non vide et totaliser 100%
     if not isinstance(base, dict) or not base:
         return jsonify({"message": "Le champ 'base' doit être un dictionnaire non vide."}), 400
     total_base = sum(base.values())
     if total_base != 100:
-        return jsonify({"message": f"La somme des % de base doit être 100 %, obtenu : {total_base} %."}), 400
+        return jsonify({
+            "message": f"La somme des pourcentages de base doit être 100 %, obtenu : {total_base} %."
+        }), 400
+
+    # 2.3. Les oxydes doivent être un dict (peut être vide)
     if not isinstance(oxydes, dict):
         return jsonify({"message": "Le champ 'oxydes' doit être un dictionnaire (peut être vide)."}), 400
 
-    # 3. Création de la recette
-    recette = Recette(nom=nom)
+    # ─── 3. Création de l'objet Recette ────────────────────────────────────────
+    recette = Recette(
+        nom=nom,
+        description_url=description_url,
+        production_doc_url=production_doc_url
+    )
     db.session.add(recette)
-    db.session.flush()  # pour avoir recette.id
+    db.session.flush()  # pour obtenir recette.id immédiatement
 
-    # 4. Fonction utilitaire : récupérer ou créer une Matiere
+    # ─── 4. Utilitaire : récupérer ou créer une Matiere ──────────────────────
     def get_or_create_matiere(nom_mat, type_matiere):
         key = nom_mat.strip().lower()
         mat = Matiere.query.filter_by(nom=key).first()
         if not mat:
             mat = Matiere(nom=key, type=type_matiere, unite="g", quantite=0.0)
             db.session.add(mat)
-            db.session.flush()
+            db.session.flush()  # pour obtenir mat.id
         return mat
 
-    # 5. Ajout des compositions (bases)
+    created = []  # liste des matières créées automatiquement
+
+    # ─── 5. Ajout des compositions de base ────────────────────────────────────
     for nom_mat, pct in base.items():
         mat = get_or_create_matiere(nom_mat, "base")
+        if mat.quantite == 0.0 and mat.nom not in created:
+            created.append(mat.nom)
         comp = Composition(
-            recette_id=recette.id,
-            matiere_id=mat.id,
-            type="base",
-            pourcentage=float(pct)
+            recette_id = recette.id,
+            matiere_id = mat.id,
+            type       = "base",
+            pourcentage= float(pct)
         )
         db.session.add(comp)
 
-    # 6. Ajout des compositions (oxydes)
+    # ─── 6. Ajout des compositions d'oxydes ─────────────────────────────────
     for nom_mat, pct in oxydes.items():
         mat = get_or_create_matiere(nom_mat, "oxyde")
+        if mat.quantite == 0.0 and mat.nom not in created:
+            created.append(mat.nom)
         comp = Composition(
-            recette_id=recette.id,
-            matiere_id=mat.id,
-            type="oxyde",
-            pourcentage=float(pct)
+            recette_id = recette.id,
+            matiere_id = mat.id,
+            type       = "oxyde",
+            pourcentage= float(pct)
         )
         db.session.add(comp)
 
-    # 7. Commit final
+    # ─── 7. Enregistrement final en base ─────────────────────────────────────
     db.session.commit()
 
+    # ─── 8. Construction de la réponse ───────────────────────────────────────
     return jsonify({
-        "message": f"Recette '{nom}' créée avec {len(base)} bases et {len(oxydes)} oxydes.",
-        "matières_créées": [
-            m.nom for m in 
-            filter(lambda m: m.quantite == 0.0, 
-                   Matiere.query.filter(Matiere.nom.in_(
-                       [*map(str.lower, base.keys()), *map(str.lower, oxydes.keys())]
-                   )).all())
-        ]
+        "message":               f"Recette '{nom}' créée avec {len(base)} base(s) et {len(oxydes)} oxyde(s).",
+        "matières_créées":       created,
+        "description_url":       description_url,
+        "production_doc_url":    production_doc_url
     }), 201
 
 
