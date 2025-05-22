@@ -232,10 +232,11 @@ def consulter_stock():
     bases = []
     oxydes = []
     for m in matieres:
-        entry = {
+                entry = {
             "nom": m.nom,
             "type": m.type,
-            "quantite": m.quantite
+            "quantite": m.quantite,
+            "unite": m.unite          # ← On ajoute l’unité (par défaut "g")
         }
         if m.type == "base":
             bases.append(entry)
