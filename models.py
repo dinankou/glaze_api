@@ -25,8 +25,10 @@ class Recette(db.Model):
     __tablename__ = 'recette'
     id = db.Column(db.Integer, primary_key=True)
     nom = db.Column(db.String, unique=True, nullable=False)
+    description_url = db.Column(db.String, nullable=True)
+    production_doc_url = db.Column(db.String, nullable=True)
     compositions = db.relationship("Composition", backref="recette", lazy=True)
-
+    
 class Composition(db.Model):
     __tablename__ = 'composition'
     id = db.Column(db.Integer, primary_key=True)
