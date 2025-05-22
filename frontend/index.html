@@ -2,90 +2,32 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Gestion de Stock Émaux</title>
-  <script src="script.js" defer></script>
+  <title>Simulation & Production d'Émaux</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h1>Interface de gestion de stock</h1>
-  
-<section id="stock">
-  <h2>Stock actuel</h2>
-  <button id="btn-stock">Charger le stock</button>
-  <table id="table-stock" border="1" style="margin-top:1em; border-collapse: collapse;">
-    <thead>
-      <tr>
-        <th>Matière</th>
-        <th>Quantité (g)</th>
-        <th>Type</th>
-        <th>Nb achats</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</section>
+  <header>
+    <h1>Simulation & Production d'Émaux</h1>
+    <nav>
+      <a href="stock.html">Gérer Stock & Achats</a>
+    </nav>
+  </header>
 
-<section id="recettes">
-  <h2>Recettes enregistrées</h2>
-  <button id="btn-recettes">Afficher les recettes</button>
-  <ul id="liste-recettes" style="margin-top: 1em;"></ul>
-</section>
-  
-<section id="ajout-recette">
-  <h2>Ajouter une recette</h2>
-  <form id="form-recette">
-    <input type="text" id="recette-nom" placeholder="Nom de la recette" required><br>
+  <section id="production-section">
+    <h2>Produire une recette</h2>
+    <label for="recette-select">Recette :</label>
+    <select id="recette-select"><option>Chargement...</option></select>
 
-    <textarea id="recette-base" placeholder="Bases (ex: silice:40, kaolin:30)" required></textarea><br>
-    <textarea id="recette-oxydes" placeholder="Oxydes (ex: cuivre:2, cobalt:1)"></textarea><br>
+    <label for="masse-input">Masse totale (g) :</label>
+    <input type="number" id="masse-input" value="1000" min="1">
 
-    <button type="submit">Ajouter la recette</button>
-  </form>
-  <p id="resultat-recette"></p>
-</section>
-  
-<section id="ajout-matiere">
-  <h2>Ajouter une matière</h2>
-  <form id="form-ajout">
-    <input type="text" id="nom" placeholder="Nom" required>
+    <button id="simulate-btn">Simuler</button>
+    <div id="simulation-result"></div>
 
-    
-    <select id="type">
-      <option value="base">Base</option>
-      <option value="oxyde">Oxyde</option>
-    </select>
-    <button type="submit">Ajouter</button>
-  </form>
-  <p id="resultat-ajout"></p>
-</section>
+    <button id="produce-btn" style="display:none; margin-top:1em;">Produire</button>
+    <div id="production-result" style="margin-top:1em;"></div>
+  </section>
 
-<section id="ajout-achat">
-  <h2>Enregistrer un achat</h2>
-  <form id="form-achat">
-    <input type="text" id="achat-nom" placeholder="Nom de la matière" required>
-    <input type="number" id="achat-quantite" placeholder="Quantité (g)" required>
-    <input type="number" step="0.01" id="achat-prix" placeholder="Prix/kg (€)" required>
-    <input type="text" id="achat-fournisseur" placeholder="Fournisseur">
-    <input type="date" id="achat-date">
-    <select id="achat-type">
-      <option value="base">Base</option>
-      <option value="oxyde">Oxyde</option>
-    </select>
-    <button type="submit">Ajouter l'achat</button>
-  </form>
-  <p id="resultat-achat"></p>
-</section>
-
-<section id="simulation">
-  <h2>Simulation de production</h2>
-  <form id="form-simulation">
-    <input type="text" id="simul-recette" placeholder="Nom de la recette" required>
-    <input type="number" id="simul-masse" placeholder="Masse totale (g)" required>
-    <button type="submit">Simuler</button>
-  </form>
-  <div id="resultat-simulation" style="white-space: pre-wrap;"></div>
-  <button id="btn-lancer-prod" style="display: none; margin-top: 1em;">Produire cette recette</button>
-  <p id="resultat-production" style="margin-top: 1em;"></p>
-</section>
-  
+  <script src="script.js"></script>
 </body>
 </html>
