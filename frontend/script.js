@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
       recetteSelect.innerHTML = '';
       data.forEach(r => {
         const opt = document.createElement('option');
-        opt.value   = r.nom;
+        opt.value       = r.nom;
         opt.textContent = r.nom;
         recetteSelect.append(opt);
       });
@@ -55,28 +55,49 @@ document.addEventListener('DOMContentLoaded', () => {
   function displaySimulation(data) {
     simulationResult.innerHTML = '';
     const table = document.createElement('table');
-    const hdr   = table.insertRow();
+    // Style du tableau pour plus d'aération
+    table.style.width = '100%';
+    table.style.borderCollapse = 'collapse';
+    table.style.margin = '1rem 0';
+
+    // Entêtes
+    const hdr = table.insertRow();
     ['Matière','Nécessaire','Dispo','Reste','Statut'].forEach(txt => {
       const th = document.createElement('th');
       th.textContent = txt;
+      th.style.padding = '8px';
+      th.style.textAlign = 'left';
+      th.style.borderBottom = '2px solid #ccc';
       hdr.append(th);
     });
 
     let canProduce = true;
     data.details.forEach(d => {
       const row = table.insertRow();
-      row.insertCell().textContent = d.matiere;
-      row.insertCell().textContent = d.quantite_necessaire;
-      row.insertCell().textContent = d.disponible;
-      row.insertCell().textContent = d.reste_apres_production;
+      [d.matiere, d.quantite_necessaire, d.disponible, d.reste_apres_production].forEach(text => {
+        const cell = row.insertCell();
+        cell.textContent = text;
+        cell.style.padding = '8px';
+        cell.style.borderBottom = '1px solid #eee';
+      });
       const statusCell = row.insertCell();
-      statusCell.textContent = d.statut.replace(/\*\*/g,'');
-      statusCell.className = 
-        d.couleur === 'vert'   ? 'ok' :
-        d.couleur === 'orange' ? 'warning' :
-        d.couleur === 'rouge'  ? 'warning' : 'danger';
+      statusCell.textContent = d.statut.replace(/\*\*/g, '');
+      statusCell.style.fontWeight = 'bold';
+      statusCell.style.padding = '8px';
+      statusCell.style.borderBottom = '1px solid #eee';
+      // Couleurs selon alerte
+      if (d.couleur === 'vert') {
+        statusCell.style.color = 'green';
+      } else if (d.couleur === 'orange') {
+        statusCell.style.color = 'orange';
+      } else if (d.couleur === 'rouge') {
+        statusCell.style.color = 'red';
+      } else {
+        statusCell.style.color = 'black';
+      }
       if (d.couleur === 'noir') canProduce = false;
     });
+
     simulationResult.append(table);
     if (canProduce) produceBtn.style.display = 'inline-block';
   }
@@ -97,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
     })
     .then(r => r.json())
     .then(data => {
-      // si alerte stock bas
+      // Si alerte stock bas
       if (data.message && data.message.startsWith('Attention')) {
         if (confirm(data.message)) {
           payload.override = true;
