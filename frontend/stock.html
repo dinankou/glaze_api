@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gestion du Stock & Achats</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>Gestion du Stock & Achats</h1>
+    <nav>
+      <a href="index.html">↩ Production</a>
+      <a href="stock.html" class="active">Stock & Achats</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <!-- Section Ajout Matière -->
+    <section id="section-add-matiere" class="card">
+      <h2>Ajouter une nouvelle matière</h2>
+      <form id="form-add-matiere">
+        <div class="form-group">
+          <label for="matiere-nom">Nom :</label>
+          <input type="text" id="matiere-nom" required placeholder="ex: kaolin">
+        </div>
+        <div class="form-group">
+          <label for="matiere-type">Type :</label>
+          <select id="matiere-type">
+            <option value="base">Base</option>
+            <option value="oxyde">Oxyde</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="matiere-unite">Unité :</label>
+          <input type="text" id="matiere-unite" value="g" required>
+        </div>
+        <button type="submit" class="btn">Ajouter Matière</button>
+        <div id="msg-matiere" class="message"></div>
+      </form>
+    </section>
+
+    <!-- Section Enregistrement Achat -->
+    <section id="section-add-achat" class="card">
+      <h2>Enregistrer un achat</h2>
+      <form id="form-add-achat">
+        <div class="form-group">
+          <label for="achat-nom">Nom Matière :</label>
+          <input type="text" id="achat-nom" required placeholder="ex: kaolin">
+        </div>
+        <div class="form-group">
+          <label for="achat-type">Type (si nouvelle) :</label>
+          <select id="achat-type">
+            <option value="">-- laisser vide si existante --</option>
+            <option value="base">Base</option>
+            <option value="oxyde">Oxyde</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="achat-quantite">Quantité :</label>
+          <input type="number" id="achat-quantite" min="0.01" step="0.01" required>
+        </div>
+        <div class="form-group">
+          <label for="achat-prix">Prix (€) :</label>
+          <input type="number" id="achat-prix" min="0" step="0.01" required>
+        </div>
+        <div class="form-group">
+          <label for="achat-fournisseur">Fournisseur :</label>
+          <input type="text" id="achat-fournisseur">
+        </div>
+        <div class="form-group">
+          <label for="achat-date">Date :</label>
+          <input type="date" id="achat-date" value="">
+        </div>
+        <button type="submit" class="btn">Enregistrer Achat</button>
+        <div id="msg-achat" class="message"></div>
+      </form>
+    </section>
+
+    <!-- Section Affichage Stock -->
+    <section id="section-stock" class="card">
+      <h2>Stock Actuel</h2>
+      <h3>Bases</h3>
+      <table id="table-stock-bases" class="table">
+        <thead><tr><th>Nom</th><th>Quantité (g)</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <h3>Oxydes</h3>
+      <table id="table-stock-oxydes" class="table">
+        <thead><tr><th>Nom</th><th>Quantité (g)</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- Section Historique Achats -->
+    <section id="section-historique" class="card">
+      <h2>Historique des Achats</h2>
+      <h3>Bases</h3>
+      <table id="table-histo-bases" class="table">
+        <thead><tr><th>Date</th><th>Nom</th><th>Quantité</th><th>Prix (€)</th><th>Fournisseur</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <h3>Oxydes</h3>
+      <table id="table-histo-oxydes" class="table">
+        <thead><tr><th>Date</th><th>Nom</th><th>Quantité</th><th>Prix (€)</th><th>Fournisseur</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
