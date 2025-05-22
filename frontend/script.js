@@ -23,11 +23,13 @@ async function loadRecettes() {
 }
 
 async function handleSimulate() {
-  const msgEl = document.getElementById('simulation-result');
-  try {
-    const recette = recetteSelect.value;
-    const masse   = parseFloat(masseInput.value);
-    const res     = await fetch(`${apiBase}/simuler_production`, {
+const recetteSelect = document.getElementById('recette-select');
+const masseInput    = document.getElementById('masse-input');
+const msgEl         = document.getElementById('simulation-result');
+try {
+  const recette = recetteSelect.value;
+  const masse   = parseFloat(masseInput.value);
+  const res     = await fetch(`${apiBase}/simuler_production`, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ recette, masse })
@@ -44,7 +46,9 @@ async function handleSimulate() {
 }
 
 async function handleProduce() {
-  const msgEl = document.getElementById('production-result');
+  const recetteSelect = document.getElementById('recette-select');
+  const masseInput    = document.getElementById('masse-input');
+  const msgEl         = document.getElementById('production-result');
   try {
     const recette = recetteSelect.value;
     const masse   = parseFloat(masseInput.value);
