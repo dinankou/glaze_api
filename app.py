@@ -348,10 +348,143 @@ def get_recettes():
 
 
 # ==========================================
-#   ROUTE PRODUIRE
+#   ROUTE SIMULE + PRODUIRE
 # ==========================================
 
+# ─── 1) SIMULATION ───────────────────────────────────────────────────────────
+@app.route("/simuler_production", methods=["POST"])
+def simuler_production():
+    data = request.get_json() or {}
+    nom_recette = data.get("recette")
+    masse_totale = data.get("masse")
 
+    # validation
+    if not nom_recette or masse_totale is None:
+        return jsonify({"message": "Champs requis : 'recette' et 'masse'"}), 400
+
+    # charger la recette et ses compositions
+    recette = Recette.query.filter_by(nom=nom_recette).first()
+    if not recette:
+        return jsonify({"message": f"Recette '{nom_recette}' introuvable."}), 404
+
+    # construire dict {matière: pourcentage}
+    comps = {c.matiere.nom: c.pourcentage for c in recette.compositions}
+
+    details = []
+    min_ratio = float("inf")
+    any_black = False
+
+    for nom_mat, pct in comps.items():
+        mt = Matiere.query.filter_by(nom=nom_mat).first()
+        massa_req = round((pct/100)*masse_totale, 2)
+
+        if not mt:
+            # matière absente → noir
+            details.append({
+                "matiere": nom_mat,
+                "quantite_necessaire": massa_req,
+                "disponible": 0,
+                "reste_apres_production": 0,
+                "statut": "**INSUFFISANT** (absente)",
+                "couleur": "noir",
+                "manquant": massa_req
+            })
+            any_black = True
+            continue
+
+        dispo = mt.quantite
+        seuil_orange = 300 if mt.type=="base" else 30
+        seuil_rouge  = 200 if mt.type=="base" else 20
+        seuil_noir   = 100 if mt.type=="base" else 5
+
+        reste = round(dispo - massa_req, 2)
+        # déterminer statut
+        if reste < seuil_noir:
+            statut, couleur = "**INSUFFISANT**", "noir"
+            any_black = True
+        elif reste < seuil_rouge:
+            statut, couleur = "**OK**", "rouge"
+        elif reste < seuil_orange:
+            statut, couleur = "**OK**", "orange"
+        else:
+            statut, couleur = "**OK**", "vert"
+
+        # calcul ratio pour quantité max
+        if massa_req > 0:
+            ratio = dispo / massa_req
+            min_ratio = min(min_ratio, ratio)
+
+        details.append({
+            "matiere": nom_mat,
+            "quantite_necessaire": massa_req,
+            "disponible": dispo,
+            "reste_apres_production": reste,
+            "statut": statut,
+            "couleur": couleur,
+            "manquant": round(max(0, massa_req - dispo), 2)
+        })
+
+    prod_max = round(min_ratio * masse_totale, 2) if min_ratio > 0 and min_ratio != float("inf") else 0
+
+    return jsonify({
+        "recette": nom_recette,
+        "demande": masse_totale,
+        "production_possible": not any_black,
+        "production_maximale_possible": prod_max,
+        "details": details
+    }), 200
+
+
+# ─── 2) PRODUCTION RÉELLE ────────────────────────────────────────────────────
+@app.route("/produire", methods=["POST"])
+def produire():
+    data = request.get_json() or {}
+    nom_recette = data.get("recette")
+    masse_totale = data.get("masse")
+    override = data.get("override", False)
+
+    # validation
+    if not nom_recette or masse_totale is None:
+        return jsonify({"message": "Champs requis : 'recette' et 'masse'"}), 400
+
+    # on refait la simulation (même logique) pour obtenir détails
+    sim_resp = simuler_production().get_json()
+    details = sim_resp["details"]
+
+    # interdit si noir
+    black_items = [d for d in details if d["couleur"]=="noir"]
+    if black_items:
+        return jsonify({
+            "message": "Production impossible : stock trop bas pour certaines matières (seuil noir).",
+            "details": black_items
+        }), 400
+
+    # si pas override et qu'il y a du rouge/orange, on propose override
+    non_vert_items = [d for d in details if d["couleur"] in ("rouge","orange")]
+    if non_vert_items and not override:
+        return jsonify({
+            "message": "Attention : stock bas pour certaines matières. Passez 'override': true pour confirmer.",
+            "details": non_vert_items
+        }), 200
+
+    # enfin, appliquer la production : décrémenter les stocks
+    for d in details:
+        mt = Matiere.query.filter_by(nom=d["matiere"]).first()
+        mt.quantite = mt.quantite - d["quantite_necessaire"]
+
+    db.session.commit()
+
+    return jsonify({
+        "message": f"Production de {masse_totale}g de '{nom_recette}' réalisée avec succès.",
+        "stock_apres": [
+            {"matiere": d["matiere"], "nouveau_stock": round(Matiere.query.filter_by(nom=d["matiere"]).first().quantite,2)}
+            for d in details
+        ]
+    }), 200
+
+# ==========================================
+#   def init_db
+# ==========================================
 # def init_db
 
 @app.route("/init_db", methods=["POST"])
