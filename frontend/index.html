@@ -2,33 +2,42 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Simulation & Production d'Émaux</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header>
-    <h1>Simulation & Production d'Émaux</h1>
+  <div class="container">
+    <!-- Navigation -->
     <nav>
-      <a href="stock.html">Gérer Stock & Achats</a>
+      <a href="index.html" class="active">Production</a>
+      <a href="stock.html">Stock & Achats</a>
     </nav>
-  </header>
 
-  <section id="production-section">
-    <h2>Produire une recette</h2>
-    <label for="recette-select">Recette :</label>
-    <select id="recette-select"><option>Chargement...</option></select>
+    <!-- Carte Production -->
+    <section class="card" id="production-section">
+      <h2>Produire une recette</h2>
+      
+      <div class="form-group">
+        <label for="recette-select">Recette :</label>
+        <select id="recette-select">
+          <option>Chargement...</option>
+        </select>
+      </div>
 
-    <label for="masse-input">Masse totale (g) :</label>
-    <input type="number" id="masse-input" value="1000" min="1">
+      <div class="form-group">
+        <label for="masse-input">Masse totale (g) :</label>
+        <input type="number" id="masse-input" value="1000" min="1">
+      </div>
 
-    <button id="simulate-btn">Simuler</button>
-    <div id="simulation-result"></div>
+      <button id="simulate-btn" class="btn">Simuler</button>
+      <div id="simulation-result" class="message"></div>
 
-    <button id="produce-btn" style="display:none; margin-top:1em;">Produire</button>
-    <div id="production-result" style="margin-top:1em;"></div>
-  </section>
+      <button id="produce-btn" class="btn" style="display:none; margin-top:1.5rem;">Produire</button>
+      <div id="production-result" class="message" style="margin-top:1rem;"></div>
+    </section>
+  </div>
 
-  <link rel="stylesheet" href="styles.css">
   <script src="script.js" defer></script>
 </body>
 </html>
