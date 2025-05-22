@@ -1,53 +1,64 @@
-// URL de base de l'API (hébergée sur Railway)
-const API_URL = "https://glazeapi-production.up.railway.app";
-console.log("✅ script.js chargé");
 // script.js
 
+// URL du projet Railway
+const apiBase = 'https://glazeapi-production.up.railway.app';
+
 document.addEventListener('DOMContentLoaded', () => {
-  const apiBase = '';
-  const recetteSelect = document.getElementById('recette-select');
-  const masseInput = document.getElementById('masse-input');
-  const simulateBtn = document.getElementById('simulate-btn');
+  const recetteSelect    = document.getElementById('recette-select');
+  const masseInput       = document.getElementById('masse-input');
+  const simulateBtn      = document.getElementById('simulate-btn');
   const simulationResult = document.getElementById('simulation-result');
-  const produceBtn = document.getElementById('produce-btn');
+  const produceBtn       = document.getElementById('produce-btn');
   const productionResult = document.getElementById('production-result');
 
-  // Charger les recettes
-  fetch(apiBase + '/recettes')
+  // 1. Charger les recettes
+  fetch(`${apiBase}/recettes`)
     .then(r => r.json())
     .then(data => {
       recetteSelect.innerHTML = '';
       data.forEach(r => {
         const opt = document.createElement('option');
-        opt.value = r.nom;
+        opt.value   = r.nom;
         opt.textContent = r.nom;
         recetteSelect.append(opt);
       });
+    })
+    .catch(err => {
+      console.error('Erreur chargement recettes:', err);
+      recetteSelect.innerHTML = '<option>Erreur de chargement</option>';
     });
 
-  // Simulation
+  // 2. Simulation
   simulateBtn.addEventListener('click', () => {
     simulationResult.innerHTML = 'Chargement...';
     productionResult.innerHTML = '';
-    produceBtn.style.display = 'none';
-    const payload = { recette: recetteSelect.value, masse: parseFloat(masseInput.value) };
+    produceBtn.style.display   = 'none';
 
-    fetch(apiBase + '/simuler_production', {
+    const payload = {
+      recette: recetteSelect.value,
+      masse: parseFloat(masseInput.value)
+    };
+
+    fetch(`${apiBase}/simuler_production`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     })
     .then(r => r.json())
-    .then(data => displaySimulation(data));
+    .then(displaySimulation)
+    .catch(err => {
+      console.error('Erreur simulation:', err);
+      simulationResult.textContent = 'Erreur lors de la simulation.';
+    });
   });
 
   function displaySimulation(data) {
     simulationResult.innerHTML = '';
     const table = document.createElement('table');
-    const hdr = table.insertRow();
-    ['Matière', 'Nécessaire', 'Dispo', 'Reste', 'Statut'].forEach(t => {
+    const hdr   = table.insertRow();
+    ['Matière','Nécessaire','Dispo','Reste','Statut'].forEach(txt => {
       const th = document.createElement('th');
-      th.textContent = t;
+      th.textContent = txt;
       hdr.append(th);
     });
 
@@ -59,47 +70,56 @@ document.addEventListener('DOMContentLoaded', () => {
       row.insertCell().textContent = d.disponible;
       row.insertCell().textContent = d.reste_apres_production;
       const statusCell = row.insertCell();
-      statusCell.textContent = d.statut.replace(/\*\*/g, '');
-      statusCell.className =
-        d.couleur === 'vert' ? 'ok' :
+      statusCell.textContent = d.statut.replace(/\*\*/g,'');
+      statusCell.className = 
+        d.couleur === 'vert'   ? 'ok' :
         d.couleur === 'orange' ? 'warning' :
-        d.couleur === 'rouge' ? 'warning' : 'danger';
+        d.couleur === 'rouge'  ? 'warning' : 'danger';
       if (d.couleur === 'noir') canProduce = false;
     });
     simulationResult.append(table);
     if (canProduce) produceBtn.style.display = 'inline-block';
   }
 
-  // Production
+  // 3. Production
   produceBtn.addEventListener('click', () => {
     productionResult.innerHTML = '';
-    const payload = { recette: recetteSelect.value, masse: parseFloat(masseInput.value) };
 
-    fetch(apiBase + '/produire', {
+    const payload = {
+      recette: recetteSelect.value,
+      masse: parseFloat(masseInput.value)
+    };
+
+    fetch(`${apiBase}/produire`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     })
     .then(r => r.json())
     .then(data => {
+      // si alerte stock bas
       if (data.message && data.message.startsWith('Attention')) {
         if (confirm(data.message)) {
           payload.override = true;
-          fetch(apiBase + '/produire', {
+          return fetch(`${apiBase}/produire`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
           })
-          .then(r => r.json())
-          .then(showProduction);
+          .then(r => r.json());
         }
-      } else showProduction(data);
+      }
+      return data;
+    })
+    .then(showProduction)
+    .catch(err => {
+      console.error('Erreur production:', err);
+      productionResult.textContent = 'Erreur lors de la production.';
     });
   });
 
   function showProduction(data) {
-    productionResult.textContent = data.message;
+    productionResult.textContent = data.message || 'Production terminée.';
     produceBtn.style.display = 'none';
   }
 });
-
