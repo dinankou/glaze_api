@@ -95,21 +95,24 @@ async function loadHistorique() {
     const res = await fetch(`${apiBase}/historique_achats`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    // Vider
     ['bases','oxydes'].forEach(cat => {
-      document.querySelector(`#table-histo-${cat} tbody`).innerHTML = '';
-      data[cat].forEach(achat => {
-        document.querySelector(`#table-histo-${cat} tbody`)
-          .insertAdjacentHTML('beforeend', `
-            <tr>
-              <td>${achat.date}</td>
-              <td>${achat.matiere}</td>
-              <td>${achat.quantite}</td>
-              <td>${achat.prix}</td>
-              <td>${achat.fournisseur}</td>
-            </tr>`);
-      });
-    });
+  // On récupère une seule fois le <tbody>
+  const tbody = document.querySelector(`#table-histo-${cat} tbody`);
+  tbody.innerHTML = '';
+
+  // Le JSON renvoie bien data[cat].achats, un tableau d’achats :contentReference[oaicite:0]{index=0}
+  data[cat].achats.forEach(achat => {
+    tbody.insertAdjacentHTML('beforeend', `
+      <tr>
+        <td>${achat.date}</td>
+        <td>${achat.nom}</td>
+        <td>${achat.quantite}</td>
+        <td>${achat.prix}</td>
+        <td>${achat.fournisseur}</td>
+      </tr>
+    `);
+  });
+});
   } catch (err) {
     console.error('Erreur loadHistorique:', err);
   }
