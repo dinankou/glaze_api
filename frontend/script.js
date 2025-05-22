@@ -23,21 +23,30 @@ async function loadRecettes() {
 }
 
 async function handleSimulate() {
-const recetteSelect = document.getElementById('recette-select');
-const masseInput    = document.getElementById('masse-input');
-const msgEl         = document.getElementById('simulation-result');
-try {
-  const recette = recetteSelect.value;
-  const masse   = parseFloat(masseInput.value);
-  const res     = await fetch(`${apiBase}/simuler_production`, {
+  const recetteSelect = document.getElementById('recette-select');
+  const masseInput    = document.getElementById('masse-input');
+  const msgEl         = document.getElementById('simulation-result');
+
+  try {
+    const recette = recetteSelect.value;
+    const masse   = parseFloat(masseInput.value);
+    const res     = await fetch(`${apiBase}/simuler_production`, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ recette, masse })
     });
-    const data    = await res.json();
-    // affichage simplifié : qualité + lignes
-    // on récupère le tableau "details" renvoyé par l’API
+    const data = await res.json();
+
+    // Gestion des erreurs HTTP
+    if (!res.ok) {
+      showMessage(msgEl, data.message || 'Erreur de simulation', true);
+      return;
+    }
+
+    // On récupère le tableau "details" (Array) renvoyé par l’API
     const details = data.details || [];
+
+    // Affichage : on utilise bien details.map, et non data.map !
     msgEl.innerHTML = details.map(d =>
       `<div>
          ${d.matiere}: 
