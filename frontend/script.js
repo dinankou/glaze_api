@@ -1,341 +1,104 @@
 // URL de base de l'API (hébergée sur Railway)
 const API_URL = "https://glazeapi-production.up.railway.app";
 console.log("✅ script.js chargé");
-//////////////////////////////////////////////
-// Fonction pour charger et afficher le stock
-/////////////////////////////////////////////
-
-async function chargerStock() {
-  try {
-    const res = await fetch(`${API_URL}/stock`);
-    const stock = await res.json();
-
-    const tbody = document.querySelector("#table-stock tbody");
-    tbody.innerHTML = ""; // vide le tableau
-
-    for (const [nom, matiere] of Object.entries(stock)) {
-      const tr = document.createElement("tr");
-
-      // Quantité toujours en grammes
-      const quantite = matiere.unite === "kg"
-        ? matiere.quantite * 1000
-        : matiere.quantite;
-
-      tr.innerHTML = `
-        <td>${nom}</td>
-        <td>${quantite} g</td>
-        <td>${matiere.type}</td>
-        <td>${matiere.achats.length}</td>
-      `;
-
-      tbody.appendChild(tr);
-    }
-  } catch (err) {
-    console.error("Erreur :", err);
-    alert("Erreur lors du chargement du stock.");
-  }
-}
 
 
-//////////////////////////////////////////////
-// Attache les événements une fois le DOM chargé
-//////////////////////////////////////////////
+document.addEventListener('DOMContentLoaded', () => {
+  const apiBase = '';
+  const recetteSelect = document.getElementById('recette-select');
+  const masseInput = document.getElementById('masse-input');
+  const simulateBtn = document.getElementById('simulate-btn');
+  const simulationResult = document.getElementById('simulation-result');
+  const produceBtn = document.getElementById('produce-btn');
+  const productionResult = document.getElementById('production-result');
 
-document.addEventListener("DOMContentLoaded", () => {
-  // 🔁 Bouton "Charger le stock"
-  const btnStock = document.getElementById("btn-stock");
-  if (btnStock) {
-    btnStock.addEventListener("click", chargerStock);
-  }
-
-  // 🔁 Bouton "Afficher les recettes"
-  const btnRecettes = document.getElementById("btn-recettes");
-  if (btnRecettes) {
-    btnRecettes.addEventListener("click", chargerRecettes);
-  }
-
-  // 🔁 Formulaire de simulation de production
-  const formSimulation = document.getElementById("form-simulation");
-  if (formSimulation) {
-    formSimulation.addEventListener("submit", e => {
-      e.preventDefault();
-      const recette = document.getElementById("simul-recette").value.trim();
-      const masse = parseFloat(document.getElementById("simul-masse").value);
-      if (recette && masse > 0) {
-        simulerProduction(recette, masse);
-      }
-    });
-  }
-
-  // 🔁 Bouton "Produire cette recette" après simulation
-  const btnLancerProd = document.getElementById("btn-lancer-prod");
-  if (btnLancerProd) {
-    btnLancerProd.addEventListener("click", () => {
-      const recette = btnLancerProd.dataset.recette;
-      const masse = parseFloat(btnLancerProd.dataset.masse);
-      const alerte = btnLancerProd.dataset.alerte === "true";
-
-      if (alerte) {
-        lancerProduction(recette, masse, false); // demande confirmation
-      } else {
-        lancerProduction(recette, masse, true);  // production directe
-      }
-    });
-  }
-
-  // 🔁 Bloc de confirmation (bouton oui / non)
-  const btnConfirmer = document.getElementById("btn-confirmer");
-  if (btnConfirmer) {
-    btnConfirmer.addEventListener("click", () => {
-      lancerProduction(recetteEnCours, masseEnCours, true);
-    });
-  }
-
-  const btnAnnuler = document.getElementById("btn-annuler");
-  if (btnAnnuler) {
-    btnAnnuler.addEventListener("click", () => {
-      document.getElementById("confirmation-block").style.display = "none";
-      document.getElementById("resultat-production").textContent = "Production annulée.";
-    });
-  }
-});
-
-//////////////////////////////////////////////
-// affiche la liste des recettes
-//////////////////////////////////////////////
-
-async function chargerRecettes() {
-  try {
-    const res = await fetch(`${API_URL}/recettes`);
-    const recettes = await res.json();
-
-    const ul = document.getElementById("liste-recettes");
-    ul.innerHTML = ""; // vide la liste
-
-    recettes.forEach(recette => {
-      const li = document.createElement("li");
-
-      const base = Object.entries(recette.base)
-        .map(([nom, val]) => `${nom}: ${val}%`)
-        .join(", ");
-
-      const oxydes = Object.entries(recette.oxydes || {})
-        .map(([nom, val]) => `${nom}: ${val}%`)
-        .join(", ");
-
-      li.textContent = `${recette.nom} → Base: [${base}] | Oxydes: [${oxydes}]`;
-      ul.appendChild(li);
+  // Charger les recettes
+  fetch(apiBase + '/recettes')
+    .then(r => r.json())
+    .then(data => {
+      recetteSelect.innerHTML = '';
+      data.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r.nom;
+        opt.textContent = r.nom;
+        recetteSelect.append(opt);
+      });
     });
 
-  } catch (err) {
-    console.error("Erreur :", err);
-    alert("Erreur lors du chargement des recettes.");
-  }
-}
+  // Simulation
+  simulateBtn.addEventListener('click', () => {
+    simulationResult.innerHTML = 'Chargement...';
+    productionResult.innerHTML = '';
+    produceBtn.style.display = 'none';
+    const payload = { recette: recetteSelect.value, masse: parseFloat(masseInput.value) };
 
-
-//////////////////////////////////////////////
-// ajoute une recette
-//////////////////////////////////////////////
-
-// Convertit un texte comme "Silice:40, kaolin:30" ou lignes séparées
-// en un objet { silice: 40, kaolin: 30 } avec noms forcés en minuscules
-function parseComposition(text) {
-  const obj = {};
-
-  // 🔁 Sépare les lignes ou entrées par : virgule, point-virgule, retour à la ligne
-  const lignes = text.split(/[\n\r,;]+/);
-
-  lignes.forEach(entry => {
-    // 🔁 Sépare "nom:valeur" et supprime les espaces autour
-    const [cle, val] = entry.split(":").map(e => e.trim());
-
-    // ✅ Si la clé existe et que la valeur est un nombre → ajoute à l'objet
-    if (cle && !isNaN(parseFloat(val))) {
-      obj[cle.toLowerCase()] = parseFloat(val); // nom en minuscule
-    }
+    fetch(apiBase + '/simuler_production', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(data => displaySimulation(data));
   });
 
-  return obj;
-}
-
-async function ajouterRecette(data) {
-  try {
-    const res = await fetch(`${API_URL}/ajouter_recette`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
+  function displaySimulation(data) {
+    simulationResult.innerHTML = '';
+    const table = document.createElement('table');
+    const hdr = table.insertRow();
+    ['Matière', 'Nécessaire', 'Dispo', 'Reste', 'Statut'].forEach(t => {
+      const th = document.createElement('th');
+      th.textContent = t;
+      hdr.append(th);
     });
 
-    const retour = await res.json();
-    document.getElementById("resultat-recette").textContent = retour.message;
-  } catch (err) {
-    console.error(err);
-    alert("Erreur lors de l'ajout de la recette.");
+    let canProduce = true;
+    data.details.forEach(d => {
+      const row = table.insertRow();
+      row.insertCell().textContent = d.matiere;
+      row.insertCell().textContent = d.quantite_necessaire;
+      row.insertCell().textContent = d.disponible;
+      row.insertCell().textContent = d.reste_apres_production;
+      const statusCell = row.insertCell();
+      statusCell.textContent = d.statut.replace(/\*\*/g, '');
+      statusCell.className =
+        d.couleur === 'vert' ? 'ok' :
+        d.couleur === 'orange' ? 'warning' :
+        d.couleur === 'rouge' ? 'warning' : 'danger';
+      if (d.couleur === 'noir') canProduce = false;
+    });
+    simulationResult.append(table);
+    if (canProduce) produceBtn.style.display = 'inline-block';
   }
-}
 
-document.getElementById("form-recette").addEventListener("submit", e => {
-  e.preventDefault();
+  // Production
+  produceBtn.addEventListener('click', () => {
+    productionResult.innerHTML = '';
+    const payload = { recette: recetteSelect.value, masse: parseFloat(masseInput.value) };
 
-  const nom = document.getElementById("recette-nom").value.trim().toLowerCase();
-  const base = parseComposition(document.getElementById("recette-base").value);
-  const oxydes = parseComposition(document.getElementById("recette-oxydes").value);
+    fetch(apiBase + '/produire', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.message && data.message.startsWith('Attention')) {
+        if (confirm(data.message)) {
+          payload.override = true;
+          fetch(apiBase + '/produire', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          })
+          .then(r => r.json())
+          .then(showProduction);
+        }
+      } else showProduction(data);
+    });
+  });
 
-  if (nom && Object.keys(base).length) {
-    ajouterRecette({ nom, base, oxydes });
-  } else {
-    alert("Nom et base requis.");
+  function showProduction(data) {
+    productionResult.textContent = data.message;
+    produceBtn.style.display = 'none';
   }
 });
-
-//////////////////////////////////////////////
-// Envoie une matière à l'API /ajouter_matiere
-//////////////////////////////////////////////
-async function ajouterMatiere(nom, type) {
-  try {
-    const res = await fetch(`${API_URL}/ajouter_matiere`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nom, type })
-    });
-
-    const data = await res.json();
-    document.getElementById("resultat-ajout").textContent = data.message;
-  } catch (err) {
-    console.error(err);
-    alert("Erreur lors de l'ajout.");
-  }
-}
-
-// Intercepte le formulaire
-document.getElementById("form-ajout").addEventListener("submit", e => {
-  e.preventDefault();
-  const nom = document.getElementById("nom").value.trim().toLowerCase();
-  const type = document.getElementById("type").value;
-  if (nom) ajouterMatiere(nom, type);
-});
-
-//////////////////////////////////////////////
-// enregistre un achat
-//////////////////////////////////////////////
-
-async function enregistrerAchat(data) {
-  try {
-    const res = await fetch(`${API_URL}/achat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
-    });
-
-    const retour = await res.json();
-    document.getElementById("resultat-achat").textContent = retour.message;
-  } catch (err) {
-    console.error(err);
-    alert("Erreur lors de l'enregistrement de l'achat.");
-  }
-}
-
-document.getElementById("form-achat").addEventListener("submit", e => {
-  e.preventDefault();
-  const data = {
-    nom: document.getElementById("achat-nom").value.trim().toLowerCase(),
-    quantite: parseFloat(document.getElementById("achat-quantite").value),
-    prix: parseFloat(document.getElementById("achat-prix").value),
-    fournisseur: document.getElementById("achat-fournisseur").value.trim(),
-    date: document.getElementById("achat-date").value,
-    type: document.getElementById("achat-type").value
-  };
-  enregistrerAchat(data);
-});
-
-//////////////////////////////////////////////
-// simule une production + propose la production
-//////////////////////////////////////////////
-
-async function simulerProduction(recette, masse) {
-  try {
-    const res = await fetch(`${API_URL}/simuler_production`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ recette, masse })
-    });
-console.log("⏳ Simulation lancée pour", recette, masse);
-    const data = await res.json();
-
-    // Affichage formaté
-    let sortie = `Recette : ${data.recette}\nMasse demandée : ${data.demande} g\n\n`;
-
-    const couleurMap = {
-      "vert": "green",
-      "orange": "orange",
-      "rouge": "red",
-      "noir": "black"
-    };
-
-    data.details.forEach(item => {
-      const statutHTML = `<strong style="color:${couleurMap[item.couleur]}">${item.statut}</strong>`;
-      sortie += `${item.matiere} — ${item.quantite_necessaire} g requis\n`;
-      sortie += `Disponible : ${item.disponible} g\n`;
-      sortie += `Statut : ${statutHTML}\n\n`;
-    });
-
-    sortie += `Production possible : ${data.production_possible ? "✅ OUI" : "❌ NON"}\n`;
-    sortie += `Quantité max possible : ${data.production_maximale_possible} g`;
-console.log("✅ Résultat simulation :", sortie);
-    document.getElementById("resultat-simulation").innerHTML = sortie;
-
-    // 🔁 Affiche ou cache le bouton "Produire"
-    const boutonProd = document.getElementById("btn-lancer-prod");
-
-    if (data.production_possible) {
-      boutonProd.style.display = "inline-block";
-      boutonProd.dataset.recette = data.recette;
-      boutonProd.dataset.masse = data.demande;
-      boutonProd.dataset.alerte = data.alerte; // true/false
-    } else {
-      boutonProd.style.display = "none";
-    }
-
-  } catch (err) {
-    console.error(err);
-    alert("Erreur lors de la simulation.");
-  }
-}
-
-//Lance la production
-
-let recetteEnCours = "";
-let masseEnCours = 0;
-
-async function lancerProduction(recette, masse, confirmer = true) {
-  recetteEnCours = recette;
-  masseEnCours = masse;
-
-  try {
-    const res = await fetch(`${API_URL}/produire`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ recette, masse, confirmer })
-    });
-
-    const data = await res.json();
-    console.log("✅ Réponse production :", data);
-
-    // Masquer le bloc de confirmation s'il existe
-    const confirmationBlock = document.getElementById("confirmation-block");
-    if (confirmationBlock) {
-      confirmationBlock.style.display = "none";
-    }
-
-    // Afficher le message de confirmation uniquement si l'élément existe
-    const resProd = document.getElementById("resultat-production");
-    if (resProd) {
-      resProd.textContent = data.message || "Production effectuée.";
-    }
-
-  } catch (err) {
-    console.error("Erreur production :", err);
-    alert("Erreur lors de la production.");
-  }
-}
