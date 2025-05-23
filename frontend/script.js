@@ -336,13 +336,13 @@ async function handleAddRecette(e) {
   try {
     const payload = {
       nom: nomInput.value.trim(),
-      bases,
+      base: bases,
       oxydes,
       description_url: descInput.value.trim(),
       production_doc_url: prodDocInput.value.trim()
     };
 
-    const res  = await fetch(`${apiBase}/recettes`, {
+    const res  = await fetch(`${apiBase}/ajouter_recette`, {
       method:  'POST',
       headers: {'Content-Type':'application/json'},
       body:    JSON.stringify(payload)
