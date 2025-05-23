@@ -27,48 +27,35 @@ async function handleSimulate() {
   const recetteSelect = document.getElementById('recette-select');
   const masseInput    = document.getElementById('masse-input');
   const msgEl         = document.getElementById('simulation-result');
-  const produceBtn = document.getElementById('produce-btn');
-  produceBtn.style.display = 'none';
-  produceBtn.textContent = 'Produire';  // remet le libellé par défaut
-  
+  const produceBtn    = document.getElementById('produce-btn');
+
+  // masque d’emblée le bouton
+  produceBtn.style.display   = 'none';
+  produceBtn.textContent     = 'Produire';
+
   try {
+    // 1) Requête
     const recette = recetteSelect.value;
     const masse   = parseFloat(masseInput.value);
     const res     = await fetch(`${apiBase}/simuler_production`, {
-      method: 'POST',
+      method:  'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ recette, masse })
+      body:    JSON.stringify({ recette, masse })
     });
- 
     const data = await res.json();
-    
-console.log('Réponse simuler_production', data);
-console.log('tbody avant injection', document.querySelector('#simulation-result tbody'));
-    
+
     if (!res.ok) {
-      // Affiche l’erreur de l’API
-      msgEl.querySelector('tbody').innerHTML = '';
+      // en cas d’erreur serveur, on vide la table et on cache le bouton
       document.querySelector('#simulation-result tbody').innerHTML = '';
-      // on cache à nouveau le bouton “Produire”
       produceBtn.style.display = 'none';
       showMessage(msgEl, data.message || 'Erreur de simulation', true);
       return;
     }
-console.log('Table simulation-result trouvée ?', document.querySelector('#simulation-result tbody'));
-    // Récupère le <tbody> et vide-le
-    const tbodySim = document.querySelector('#simulation-result tbody');
-    if (!tbodySim) {
-      console.error('tbody non trouvé pour #simulation-result');
-      return;
-    }
-    tbodySim.innerHTML = '';
 
-    // Injecte les lignes
-    const details = data.details || [];
-    tbodySim.innerHTML = details.map(d => {
-      // Nettoyage du statut pour supprimer les "**"
+    // 2) Injection des résultats dans le <tbody>
+    const tbodySim = document.querySelector('#simulation-result tbody');
+    tbodySim.innerHTML = (data.details || []).map(d => {
       const cleanStatut = d.statut.replace(/\*/g, '');
-      // Classe basée sur la couleur renvoyée par le back
       const cssClass    = `status-${d.couleur.toLowerCase()}`;
       return `
         <tr>
@@ -79,43 +66,13 @@ console.log('Table simulation-result trouvée ?', document.querySelector('#simul
       `;
     }).join('');
 
-    // Détecter les cas “noir” et “low”
-    const simCouleurs = details.map(d => d.couleur);
+    // 3) Détection unique des cas “noir” / “rouge‐orange” / “vert”
+    const couleurs = (data.details || []).map(d => d.couleur.toLowerCase());
     const hasBlack = couleurs.includes('noir');
     const hasLow   = couleurs.some(c => c === 'rouge' || c === 'orange');
-    
-    if (hasBlack) {
-    // Afficher un message d’erreur persistant
-    const simMsg = document.getElementById('simulation-message');
-    showMessage(
-      simMsg,
-      'Stock trop bas. Vérifiez et ajustez le stock avant de continuer.',
-      true
-    );
-    // Masquer le bouton Produire
-    produceBtn.style.display = 'none';
-    } else {
-      // afficher le bouton
-      produceBtn.style.display = 'block';
-    
-      if (hasLow) {
-        // override requis pour orange/rouge
-        produceBtn.textContent    = 'Forcer la production';
-        produceBtn.dataset.override = 'true';
-      } else {
-        // tout vert : production normale
-        produceBtn.textContent    = 'Produire';
-        produceBtn.dataset.override = 'false';
-      }
-    }
-    
-// Détection des statuts
-    const couleurs = details.map(d => d.couleur);
-    const hasBlack = simCouleurs.includes('noir');
-    const hasLow   = simCouleurs.some(c => c === 'rouge' || c === 'orange');
 
     if (hasBlack) {
-      // cas critique “noir” → on avertit et on masque le bouton
+      // cas critique “noir”
       const simMsg = document.getElementById('simulation-message');
       showMessage(
         simMsg,
@@ -124,25 +81,25 @@ console.log('Table simulation-result trouvée ?', document.querySelector('#simul
       );
       produceBtn.style.display = 'none';
     } else {
-      // on affiche toujours le bouton
+      // on affiche le bouton
       produceBtn.style.display = 'block';
 
       if (hasLow) {
-        // cas rouge/orange → override requis
-        produceBtn.textContent     = 'Forcer la production';
+        // override requis
+        produceBtn.textContent      = 'Forcer la production';
         produceBtn.dataset.override = 'true';
       } else {
-        // tout vert → production normale
-        produceBtn.textContent     = 'Produire';
+        // tout vert
+        produceBtn.textContent      = 'Produire';
         produceBtn.dataset.override = 'false';
       }
     }
+
   } catch (err) {
     console.error('Échec simulation :', err);
     showMessage(msgEl, 'Échec simulation', true);
   }
 }
-
 async function handleProduce() {
   const recetteSelect = document.getElementById('recette-select');
   const masseInput    = document.getElementById('masse-input');
