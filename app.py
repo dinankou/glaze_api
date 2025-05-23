@@ -500,7 +500,65 @@ def produire():
         "message": f"Production de {masse_totale}g de '{nom_recette}' réalisée avec succès.",
         "stock_apres": stock_post
     }), 200
-    
+
+# ==========================================
+#   DELETE RECETTE
+# ==========================================
+
+@app.route("/recettes/<string:nom>", methods=["DELETE"])
+def delete_recette(nom):
+    """
+    Supprime la recette identifiée par son nom et toutes ses compositions associées.
+    Retourne une erreur 404 si la recette n'existe pas.
+    """
+    # 1) Recherche de la recette
+    recette = Recette.query.filter_by(nom=nom).first()
+    if not recette:
+        return jsonify({"message": f"Recette '{nom}' introuvable."}), 404
+
+    # 2) Suppression des compositions liées (sécurité si pas de cascade SQLAlchemy)
+    Composition.query.filter_by(recette_id=recette.id).delete()
+
+    # 3) Suppression de la recette elle-même
+    db.session.delete(recette)
+    db.session.commit()
+
+    # 4) Réponse
+    return jsonify({"message": f"Recette '{nom}' supprimée avec succès."}), 200
+
+# ==========================================
+#   DELETE MATIERE
+# ==========================================
+
+@app.route("/matieres/<string:nom>", methods=["DELETE"])
+def delete_matiere(nom):
+    """
+    Supprime la matière nommée <nom> si elle n'est
+    plus utilisée dans aucune recette.
+    Retourne 404 si non trouvée, 400 si encore référencée.
+    """
+    # Normalisation du nom
+    key = nom.strip().lower()
+    # Recherche de la matière
+    matiere = Matiere.query.filter_by(nom=key).first()
+    if not matiere:
+        return jsonify({"message": f"Matière '{key}' introuvable."}), 404
+
+    # Vérification des références en Composition
+    count = Composition.query.filter_by(matiere_id=matiere.id).count()
+    if count > 0:
+        return jsonify({
+            "message": (
+                f"Matière '{key}' utilisée dans {count} recette(s), "
+                "impossible de supprimer."
+            )
+        }), 400
+
+    # Suppression
+    db.session.delete(matiere)
+    db.session.commit()
+    return jsonify({"message": f"Matière '{key}' supprimée avec succès."}), 200
+
 # ==========================================
 #   def init_db
 # ==========================================
