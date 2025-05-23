@@ -49,13 +49,13 @@ async function handleSimulate() {
 
 const tbodySim = document.querySelector('#simulation-result tbody');
     
-  tbodySim.innerHTML = details.map(d => `
-    <tr>
-      <td>${d.matiere}</td>
-      <td>${d.quantite_necessaire.toFixed(2)}</td>
-      <td>${d.statut}</td>
-    </tr>
-  `).join('');
+  tbodySim.innerHTML = details.map(d =>
+  `<tr>
+     <td>${d.matiere}</td>
+     <td>${d.quantite_necessaire.toFixed(2)}</td>
+     <td class="status-${d.statut.toLowerCase()}">${d.statut}</td>
+   </tr>`
+).join('');
   
     } catch (err) {
       showMessage(msgEl, 'Échec simulation', true);
