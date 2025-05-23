@@ -255,10 +255,13 @@ async function handleAddAchat(e) {
  */
 function parseComposition(input) {
   const obj = {};
-  const regex = /([^\s,:]+)\s*[:\s,]\s*([\d.]+)/g;
+  // On autorise désormais lettres, chiffres et espaces dans le nom de clé
+  // jusqu’au premier délimiteur :, espace ou virgule suivi d’un nombre
+  const regex = /([A-Za-z0-9À-ÖØ-öø-ÿ\s]+?)\s*[:\s,]\s*([\d.]+)/g;
   let match;
   while ((match = regex.exec(input)) !== null) {
-    obj[match[1]] = parseFloat(match[2]);
+    const key = match[1].trim().toLowerCase(); // minuscules + trim
+    obj[key] = parseFloat(match[2]);
   }
   return obj;
 }
@@ -275,17 +278,24 @@ async function loadRecettesList() {
       return;
     }
     const tbody = document.querySelector('#table-recettes tbody');
-    // On stringify pour afficher facilement l’objet JSON
-    tbody.innerHTML = data
-      .map(r => `
+    tbody.innerHTML = data.map(r => {
+      // Transformer { nom: pourcentage } → "nom: pourcentage%"
+      const basesText  = Object.entries(r.base  || {})
+                             .map(([k,v]) => `${k}: ${v}%`)
+                             .join(', ') || '–';
+      const oxydesText = Object.entries(r.oxydes || {})
+                             .map(([k,v]) => `${k}: ${v}%`)
+                             .join(', ') || '–';
+
+      return `
         <tr>
           <td>${r.nom}</td>
-          <td><code>${JSON.stringify(r.bases)}</code></td>
-          <td><code>${JSON.stringify(r.oxydes || {})}</code></td>
-          <td>${r.description_url ? `<a href="${r.description_url}" target="_blank">Voir</a>` : ''}</td>
-          <td>${r.production_doc_url ? `<a href="${r.production_doc_url}" target="_blank">Voir</a>` : ''}</td>
-        </tr>`)
-      .join('');
+          <td>${basesText}</td>        <!-- utilisation de r.base -->
+          <td>${oxydesText}</td>
+          <td>${r.description_url ? `<a href="${r.description_url}" target="_blank">Voir</a>` : '–'}</td>
+          <td>${r.production_doc_url ? `<a href="${r.production_doc_url}" target="_blank">Voir</a>` : '–'}</td>
+        </tr>`;
+    }).join('');
   } catch (err) {
     console.error('Échec loadRecettesList :', err);
   }
