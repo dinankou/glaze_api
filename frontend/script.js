@@ -26,7 +26,7 @@ async function handleSimulate() {
   const recetteSelect = document.getElementById('recette-select');
   const masseInput    = document.getElementById('masse-input');
   const msgEl         = document.getElementById('simulation-result');
-
+  
   try {
     const recette = recetteSelect.value;
     const masse   = parseFloat(masseInput.value);
@@ -37,31 +37,36 @@ async function handleSimulate() {
     });
     const data = await res.json();
 
-    // Gestion des erreurs HTTP
     if (!res.ok) {
+      // Affiche l’erreur de l’API
+      msgEl.querySelector('tbody').innerHTML = '';
       showMessage(msgEl, data.message || 'Erreur de simulation', true);
       return;
     }
 
-    // On récupère le tableau "details" (Array) renvoyé par l’API
-    const details = data.details || [];
-    
-
-const tbodySim = document.querySelector('#simulation-result tbody');
-    
-  tbodySim.innerHTML = details.map(d =>
-  `<tr>
-     <td>${d.matiere}</td>
-     <td>${d.quantite_necessaire.toFixed(2)}</td>
-     <td class="status-${d.statut.toLowerCase()}">${d.statut}</td>
-   </tr>`
-).join('');
-  
-    } catch (err) {
-      showMessage(msgEl, 'Échec simulation', true);
-      console.error(err);
+    // Récupère le <tbody> et vide-le
+    const tbodySim = document.querySelector('#simulation-result tbody');
+    if (!tbodySim) {
+      console.error('tbody non trouvé pour #simulation-result');
+      return;
     }
+    tbodySim.innerHTML = '';
+
+    // Injecte les lignes
+    const details = data.details || [];
+    tbodySim.innerHTML = details.map(d => `
+      <tr>
+        <td>${d.matiere}</td>
+        <td>${d.quantite_necessaire.toFixed(2)}</td>
+        <td class="status-${d.statut.toLowerCase()}">${d.statut}</td>
+      </tr>
+    `).join('');
+
+  } catch (err) {
+    console.error('Échec simulation :', err);
+    showMessage(msgEl, 'Échec simulation', true);
   }
+}
 
 async function handleProduce() {
   const recetteSelect = document.getElementById('recette-select');
