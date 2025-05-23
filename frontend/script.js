@@ -85,8 +85,15 @@ console.log('Table simulation-result trouvée ?', document.querySelector('#simul
     const hasLow   = couleurs.some(c => c === 'rouge' || c === 'orange');
     
     if (hasBlack) {
-      // ne pas afficher de bouton si noir
-      produceBtn.style.display = 'none';
+    // Afficher un message d’erreur persistant
+    const simMsg = document.getElementById('simulation-message');
+    showMessage(
+      simMsg,
+      'Stock trop bas. Vérifiez et ajustez le stock avant de continuer.',
+      true
+    );
+    // Masquer le bouton Produire
+    produceBtn.style.display = 'none';
     } else {
       // afficher le bouton
       produceBtn.style.display = 'block';
