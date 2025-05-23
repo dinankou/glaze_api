@@ -33,11 +33,41 @@
         <input type="number" id="masse-input" value="1000" min="1">
       </div>
 
-      <button id="simulate-btn" class="btn">Simuler</button>
-      <div id="simulation-result" class="card"></div>
+<button id="simulate-btn" class="btn">Simuler</button>
+<!-- Carte Résultats de simulation -->
+<section class="card" style="margin-top:1.5rem;">
+  <h3>Résultats de la simulation</h3>
+  <table id="simulation-result" class="table result-table">
+    <thead>
+      <tr>
+        <th>Matière</th>
+        <th>Quantité nécessaire (g)</th>
+        <th>Statut</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Rempli dynamiquement par JS -->
+    </tbody>
+  </table>
+</section>
 
-      <button id="produce-btn" class="btn" style="display:none; margin-top:1.5rem;">Produire</button>
-      <div id="production-result" class="card" style="margin-top:1rem;"></div>
+<button id="produce-btn" class="btn" style="display:none; margin-top:1.5rem;">Produire</button>
+<!-- Carte Résultats de production -->
+<section class="card" style="margin-top:1.5rem;">
+  <h3>Confirmation de production</h3>
+  <table id="production-result" class="table result-table">
+    <thead>
+      <tr>
+        <th>Matière</th>
+        <th>Stock après (g)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Rempli dynamiquement par JS si besoin -->
+    </tbody>
+  </table>
+</section>
+
     </section>
   </div>
 
