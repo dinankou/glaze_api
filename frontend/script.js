@@ -43,7 +43,7 @@ async function handleSimulate() {
       showMessage(msgEl, data.message || 'Erreur de simulation', true);
       return;
     }
-
+console.log('Table simulation-result trouvée ?', document.querySelector('#simulation-result tbody'));
     // Récupère le <tbody> et vide-le
     const tbodySim = document.querySelector('#simulation-result tbody');
     if (!tbodySim) {
