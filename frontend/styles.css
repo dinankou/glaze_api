@@ -179,6 +179,30 @@ nav a:hover {
 }
 
 /* ---------------------------------------------------
+   Statuts de simulation
+   --------------------------------------------------- */
+.table.result-table td[class^="status-"] {
+  font-weight: bold;
+  text-transform: capitalize;
+}
+
+.status-vert {
+  color: #28a745;    /* vert “succès” */
+}
+
+.status-orange {
+  color: #fd7e14;    /* orange “avertissement” */
+}
+
+.status-rouge {
+  color: #dc3545;    /* rouge “danger” */
+}
+
+.status-noir {
+  color: #6c757d;    /* gris “critique” ou indisponible */
+}
+
+/* ---------------------------------------------------
    Responsive
    --------------------------------------------------- */
 @media (max-width: 600px) {
