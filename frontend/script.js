@@ -80,7 +80,7 @@ console.log('Table simulation-result trouvée ?', document.querySelector('#simul
     }).join('');
 
     // Détecter les cas “noir” et “low”
-    const couleurs = details.map(d => d.couleur);
+    const simCouleurs = details.map(d => d.couleur);
     const hasBlack = couleurs.includes('noir');
     const hasLow   = couleurs.some(c => c === 'rouge' || c === 'orange');
     
@@ -111,8 +111,8 @@ console.log('Table simulation-result trouvée ?', document.querySelector('#simul
     
 // Détection des statuts
     const couleurs = details.map(d => d.couleur);
-    const hasBlack = couleurs.includes('noir');
-    const hasLow   = couleurs.some(c => c === 'rouge' || c === 'orange');
+    const hasBlack = simCouleurs.includes('noir');
+    const hasLow   = simCouleurs.some(c => c === 'rouge' || c === 'orange');
 
     if (hasBlack) {
       // cas critique “noir” → on avertit et on masque le bouton
