@@ -246,6 +246,77 @@ async function handleAddAchat(e) {
   }
 }
 
+// ─── 3. Fonctions Recettes ───────────────────────────────────────────────────
+
+/**
+ * Récupère la liste des recettes et l'affiche dans recettes.html
+ */
+async function loadRecettesList() {
+  try {
+    const res  = await fetch(`${apiBase}/recettes`);
+    const data = await res.json();
+    if (!res.ok) {
+      console.error('Erreur chargement recettes :', data.message);
+      return;
+    }
+    const tbody = document.querySelector('#table-recettes tbody');
+    // On stringify pour afficher facilement l’objet JSON
+    tbody.innerHTML = data
+      .map(r => `
+        <tr>
+          <td>${r.nom}</td>
+          <td><code>${JSON.stringify(r.bases)}</code></td>
+          <td><code>${JSON.stringify(r.oxydes || {})}</code></td>
+          <td>${r.description_url ? `<a href="${r.description_url}" target="_blank">Voir</a>` : ''}</td>
+          <td>${r.production_doc_url ? `<a href="${r.production_doc_url}" target="_blank">Voir</a>` : ''}</td>
+        </tr>`)
+      .join('');
+  } catch (err) {
+    console.error('Échec loadRecettesList :', err);
+  }
+}
+
+/**
+ * Traite l'envoi du formulaire de création de recette
+ */
+async function handleAddRecette(e) {
+  e.preventDefault();
+  const nomInput     = document.getElementById('recette-nom');
+  const basesInput   = document.getElementById('recette-base');
+  const oxydesInput  = document.getElementById('recette-oxydes');
+  const descInput    = document.getElementById('recette-description-url');
+  const prodDocInput = document.getElementById('recette-production-doc-url');
+  const msgEl        = document.getElementById('msg-recette');
+
+  try {
+    const bases  = JSON.parse(basesInput.value);
+    const oxydes = oxydesInput.value ? JSON.parse(oxydesInput.value) : {};
+    const payload = {
+      nom: nomInput.value.trim(),
+      bases,
+      oxydes,
+      description_url: descInput.value.trim(),
+      production_doc_url: prodDocInput.value.trim()
+    };
+
+    const res  = await fetch(`${apiBase}/recettes`, {
+      method:  'POST',
+      headers: {'Content-Type':'application/json'},
+      body:    JSON.stringify(payload)
+    });
+    const data = await res.json();
+    showMessage(msgEl, data.message, !res.ok);
+
+    if (res.ok) {
+      e.target.reset();         // vider le formulaire
+      loadRecettesList();       // recharger la liste
+    }
+  } catch (err) {
+    console.error('Erreur handleAddRecette :', err);
+    showMessage(msgEl, 'Erreur réseau', true);
+  }
+}
+
 // ─── 4. DOMContentLoaded ───────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   const recetteSelect = document.getElementById('recette-select');
@@ -290,5 +361,14 @@ document.addEventListener('DOMContentLoaded', () => {
     loadHistorique();
     formMatiere.addEventListener('submit', handleAddMatiere);
     formAchat.addEventListener('submit', handleAddAchat);
+  }
+  // ==== Bloc RECETTES ====
+  // Ne s'exécute que sur recettes.html
+  const formRecette     = document.getElementById('form-add-recette');
+  const recettesTable   = document.getElementById('table-recettes');
+
+  if (formRecette && recettesTable) {
+    loadRecettesList();                     // charger la liste au chargement
+    formRecette.addEventListener('submit', handleAddRecette);
   }
 });
