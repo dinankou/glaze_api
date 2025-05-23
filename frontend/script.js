@@ -247,6 +247,21 @@ async function handleAddAchat(e) {
 }
 
 // ─── 3. Fonctions Recettes ───────────────────────────────────────────────────
+// ─── 3.1. Parser libre de composition ────────────────────────────────────────
+
+/**
+ * Transforme une chaîne du type "clé:valeur clé, valeur2 clé valeur3"
+ * en objet { clé: valeur, ... }
+ */
+function parseComposition(input) {
+  const obj = {};
+  const regex = /([^\s,:]+)\s*[:\s,]\s*([\d.]+)/g;
+  let match;
+  while ((match = regex.exec(input)) !== null) {
+    obj[match[1]] = parseFloat(match[2]);
+  }
+  return obj;
+}
 
 /**
  * Récupère la liste des recettes et l'affiche dans recettes.html
@@ -288,9 +303,37 @@ async function handleAddRecette(e) {
   const prodDocInput = document.getElementById('recette-production-doc-url');
   const msgEl        = document.getElementById('msg-recette');
 
+  // ─── Parsing des compositions ───────────────────────────────────────────
+  let bases, oxydes;
   try {
-    const bases  = JSON.parse(basesInput.value);
-    const oxydes = oxydesInput.value ? JSON.parse(oxydesInput.value) : {};
+    const rawBases = basesInput.value.trim();
+    if (rawBases.startsWith('{')) {
+      bases = JSON.parse(rawBases);
+    } else {
+      bases = parseComposition(rawBases);
+    }
+    if (Object.keys(bases).length === 0) {
+      throw new Error("Aucune base détectée");
+    }
+
+    const rawOx = oxydesInput.value.trim();
+    if (!rawOx) {
+      oxydes = {};
+    } else if (rawOx.startsWith('{')) {
+      oxydes = JSON.parse(rawOx);
+    } else {
+      oxydes = parseComposition(rawOx);
+    }
+  } catch (err) {
+    // Affiche l’erreur selon l’étape
+    const msg = err.message.includes('base') 
+      ? "Format de bases invalide : JSON ou 'composant:xx'" 
+      : "Format d’oxydes invalide : JSON ou 'composant xx'";
+    return showMessage(msgEl, msg, true);
+  }
+
+  // ─── Envoi au serveur ──────────────────────────────────────────────────
+  try {
     const payload = {
       nom: nomInput.value.trim(),
       bases,
@@ -308,11 +351,11 @@ async function handleAddRecette(e) {
     showMessage(msgEl, data.message, !res.ok);
 
     if (res.ok) {
-      e.target.reset();         // vider le formulaire
-      loadRecettesList();       // recharger la liste
+      e.target.reset();
+      loadRecettesList();
     }
   } catch (err) {
-    console.error('Erreur handleAddRecette :', err);
+    console.error('Erreur réseau handleAddRecette :', err);
     showMessage(msgEl, 'Erreur réseau', true);
   }
 }
