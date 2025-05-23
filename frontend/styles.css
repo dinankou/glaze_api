@@ -78,6 +78,13 @@ nav a:hover {
   color: var(--color-primary);
 }
 
+/* Titre des tableaux dans les cards */
+.card h3 {
+  margin-bottom: var(--spacing);
+  font-size: 1.2rem;
+  color: var(--color-accent);
+}
+
 /* ---------------------------------------------------
    Formulaires
    --------------------------------------------------- */
@@ -158,6 +165,17 @@ nav a:hover {
 }
 .table tbody tr:hover {
   background: var(--color-accent);
+}
+
+/* Un peu plus d’espace autour des tables */
+.result-table {
+  margin: calc(var(--spacing) / 2) 0;
+}
+
+/* Rendre les lignes de statut plus parlantes */
+.result-table td:nth-child(3) {
+  text-transform: capitalize;
+  font-weight: bold;
 }
 
 /* ---------------------------------------------------
