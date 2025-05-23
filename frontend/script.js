@@ -85,6 +85,13 @@ async function handleSimulate() {
       produceBtn.style.display = 'block';
 
       if (hasLow) {
+        // ** Nouveau message d’alerte avant override **
+        const simMsg = document.getElementById('simulation-message');
+        showMessage(
+          simMsg,
+          'Stock faible pour certains composants. Voulez-vous forcer la production ?',
+          false    // false = message de type info/plutôt qu’erreur
+        );
         // override requis
         produceBtn.textContent      = 'Forcer la production';
         produceBtn.dataset.override = 'true';
