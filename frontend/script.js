@@ -83,10 +83,12 @@ console.log('Table simulation-result trouvée ?', document.querySelector('#simul
     if (data.production_possible) {
       produceBtn.style.display = 'block';
       produceBtn.textContent = 'Produire';
+      produceBtn.dataset.override = 'false';
     } else {
       // override autorisé malgré rouge/rouge foncé
       produceBtn.style.display = 'block';
       produceBtn.textContent = 'Forcer la production';
+      produceBtn.dataset.override = 'true';
     }
   } catch (err) {
     console.error('Échec simulation :', err);
@@ -98,13 +100,15 @@ async function handleProduce() {
   const recetteSelect = document.getElementById('recette-select');
   const masseInput    = document.getElementById('masse-input');
   const msgEl         = document.getElementById('production-result');
+  const produceBtn    = document.getElementById('produce-btn');
   try {
     const recette = recetteSelect.value;
     const masse   = parseFloat(masseInput.value);
+    const override = produceBtn.dataset.override === 'true';
     const res     = await fetch(`${apiBase}/produire`, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ recette, masse })
+      body: JSON.stringify({ recette, masse, override })
     });
     const json    = await res.json();
     showMessage(msgEl, json.message, !res.ok);
