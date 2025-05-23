@@ -250,18 +250,23 @@ async function handleAddAchat(e) {
 // ─── 3.1. Parser libre de composition ────────────────────────────────────────
 
 /**
- * Transforme une chaîne du type "clé:valeur clé, valeur2 clé valeur3"
- * en objet { clé: valeur, ... }
+ * Transforme une chaîne du type
+ *   "kaolin:70,feldspath 30\tCuO:5"
+ * en objet { kaolin:70, feldspath:30, CuO:5 }
+ *
+ * Séparateur strict : deux-points (:), virgule (,) ou tabulation (\t)
  */
 function parseComposition(input) {
   const obj = {};
-  // On autorise désormais lettres, chiffres et espaces dans le nom de clé
-  // jusqu’au premier délimiteur :, espace ou virgule suivi d’un nombre
-  const regex = /([A-Za-z0-9À-ÖØ-öø-ÿ\s]+?)\s*[:\s,]\s*([\d.]+)/g;
+  // 1) ([^\t:,]+) : capture le nom de la matière (tout caractère sauf tab, :, ,)
+  // 2) \s*[:\,\t]\s* : un séparateur : ou , ou tab entouré d'espaces éventuels
+  // 3) ([\d.]+) : la partie numérique (entier ou flottant)
+  const regex = /([^\t:,]+)\s*[:\,\t]\s*([\d.]+)/g;
   let match;
   while ((match = regex.exec(input)) !== null) {
-    const key = match[1].trim().toLowerCase(); // minuscules + trim
-    obj[key] = parseFloat(match[2]);
+    const key   = match[1].trim().toLowerCase();
+    const value = parseFloat(match[2]);
+    obj[key] = value;
   }
   return obj;
 }
