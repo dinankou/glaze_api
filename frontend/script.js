@@ -109,16 +109,33 @@ console.log('Table simulation-result trouvée ?', document.querySelector('#simul
       }
     }
     
-    // Afficher le bouton Produire et ajuster le libellé
-    if (data.production_possible) {
-      produceBtn.style.display = 'block';
-      produceBtn.textContent = 'Produire';
-      produceBtn.dataset.override = 'false';
+// Détection des statuts
+    const couleurs = details.map(d => d.couleur);
+    const hasBlack = couleurs.includes('noir');
+    const hasLow   = couleurs.some(c => c === 'rouge' || c === 'orange');
+
+    if (hasBlack) {
+      // cas critique “noir” → on avertit et on masque le bouton
+      const simMsg = document.getElementById('simulation-message');
+      showMessage(
+        simMsg,
+        'Stock trop bas. Vérifiez et ajustez le stock avant de continuer.',
+        true
+      );
+      produceBtn.style.display = 'none';
     } else {
-      // override autorisé malgré rouge/rouge foncé
+      // on affiche toujours le bouton
       produceBtn.style.display = 'block';
-      produceBtn.textContent = 'Forcer la production';
-      produceBtn.dataset.override = 'true';
+
+      if (hasLow) {
+        // cas rouge/orange → override requis
+        produceBtn.textContent     = 'Forcer la production';
+        produceBtn.dataset.override = 'true';
+      } else {
+        // tout vert → production normale
+        produceBtn.textContent     = 'Produire';
+        produceBtn.dataset.override = 'false';
+      }
     }
   } catch (err) {
     console.error('Échec simulation :', err);
@@ -135,6 +152,7 @@ async function handleProduce() {
     const recette = recetteSelect.value;
     const masse   = parseFloat(masseInput.value);
     const override = produceBtn.dataset.override === 'true';
+    console.log('Override envoyé ?', override);
     const res     = await fetch(`${apiBase}/produire`, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
