@@ -58,13 +58,19 @@ console.log('Table simulation-result trouvée ?', document.querySelector('#simul
 
     // Injecte les lignes
     const details = data.details || [];
-    tbodySim.innerHTML = details.map(d => `
-      <tr>
-        <td>${d.matiere}</td>
-        <td>${d.quantite_necessaire.toFixed(2)}</td>
-        <td class="status-${d.statut.toLowerCase()}">${d.statut}</td>
-      </tr>
-    `).join('');
+    tbodySim.innerHTML = details.map(d => {
+      // Nettoyage du statut pour supprimer les "**"
+      const cleanStatut = d.statut.replace(/\*/g, '');
+      // Classe basée sur la couleur renvoyée par le back
+      const cssClass    = `status-${d.couleur.toLowerCase()}`;
+      return `
+        <tr>
+          <td>${d.matiere}</td>
+          <td>${d.quantite_necessaire.toFixed(2)}</td>
+          <td class="${cssClass}"><strong>${cleanStatut}</strong></td>
+        </tr>
+      `;
+    }).join('');
 
   } catch (err) {
     console.error('Échec simulation :', err);
