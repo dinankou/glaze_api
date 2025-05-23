@@ -284,15 +284,18 @@ async function handleAddAchat(e) {
 
 // ─── 4. DOMContentLoaded ───────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  // ==== Bloc PRODUCTION ====
   const recetteSelect = document.getElementById('recette-select');
-  const masseInput    = document.getElementById('masse-input');
   const simulateBtn   = document.getElementById('simulate-btn');
   const productionBtn = document.getElementById('produce-btn');
 
-  // On n'initialise la partie production QUE si on est sur la page production
-  if (recetteSelect && masseInput && simulateBtn && productionBtn) {
-    // Charger les recettes pour le select
+  // 1) Si on est bien sur la page de production (on a le select + le bouton Simuler)
+  if (recetteSelect && simulateBtn) {
+    console.log('▶︎ Init partie production');
+
+    // On vide l'option de chargement (optionnel)
+    recetteSelect.innerHTML = '';
+
+    // Charge la liste des recettes
     loadRecettes()
       .then(recettes => {
         recettes.forEach(r => {
@@ -300,9 +303,15 @@ document.addEventListener('DOMContentLoaded', () => {
             `<option value="${r.nom}">${r.nom}</option>`);
         });
       })
-      .catch(() => {/* erreur déjà loggée */});
+      .catch(err => console.error('Erreur loadRecettes:', err));
 
+    // Attache le simulateur
     simulateBtn.addEventListener('click', handleSimulate);
+  }
+
+  // 2) Si le bouton Produire existe, on lui attache son listener
+  if (productionBtn) {
+    console.log('▶︎ J’attache handleProduce au bouton Produire');
     productionBtn.addEventListener('click', handleProduce);
   }
 
