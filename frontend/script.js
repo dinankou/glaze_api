@@ -23,6 +23,7 @@ async function loadRecettes() {
 }
 
 async function handleSimulate() {
+  console.log('▶︎ handleSimulate() appelé');
   const recetteSelect = document.getElementById('recette-select');
   const masseInput    = document.getElementById('masse-input');
   const msgEl         = document.getElementById('simulation-result');
@@ -36,7 +37,10 @@ async function handleSimulate() {
       body: JSON.stringify({ recette, masse })
     });
     const data = await res.json();
-
+    
+console.log('Réponse simuler_production', data);
+console.log('tbody avant injection', document.querySelector('#simulation-result tbody'));
+    
     if (!res.ok) {
       // Affiche l’erreur de l’API
       msgEl.querySelector('tbody').innerHTML = '';
