@@ -27,6 +27,9 @@ async function handleSimulate() {
   const recetteSelect = document.getElementById('recette-select');
   const masseInput    = document.getElementById('masse-input');
   const msgEl         = document.getElementById('simulation-result');
+  const produceBtn = document.getElementById('produce-btn');
+  produceBtn.style.display = 'none';
+  produceBtn.textContent = 'Produire';  // remet le libellé par défaut
   
   try {
     const recette = recetteSelect.value;
@@ -36,6 +39,7 @@ async function handleSimulate() {
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ recette, masse })
     });
+ 
     const data = await res.json();
     
 console.log('Réponse simuler_production', data);
@@ -44,6 +48,9 @@ console.log('tbody avant injection', document.querySelector('#simulation-result 
     if (!res.ok) {
       // Affiche l’erreur de l’API
       msgEl.querySelector('tbody').innerHTML = '';
+      document.querySelector('#simulation-result tbody').innerHTML = '';
+      // on cache à nouveau le bouton “Produire”
+      produceBtn.style.display = 'none';
       showMessage(msgEl, data.message || 'Erreur de simulation', true);
       return;
     }
@@ -71,7 +78,16 @@ console.log('Table simulation-result trouvée ?', document.querySelector('#simul
         </tr>
       `;
     }).join('');
-
+    
+    // Afficher le bouton Produire et ajuster le libellé
+    if (data.production_possible) {
+      produceBtn.style.display = 'block';
+      produceBtn.textContent = 'Produire';
+    } else {
+      // override autorisé malgré rouge/rouge foncé
+      produceBtn.style.display = 'block';
+      produceBtn.textContent = 'Forcer la production';
+    }
   } catch (err) {
     console.error('Échec simulation :', err);
     showMessage(msgEl, 'Échec simulation', true);
