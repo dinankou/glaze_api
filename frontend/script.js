@@ -370,6 +370,78 @@ async function handleAddRecette(e) {
   }
 }
 
+// ===== 3.X Fonctions Administration =====
+
+/**
+ * Charge et affiche toutes les recettes avec un bouton de suppression.
+ */
+async function loadAdminRecettes() {
+  const res = await fetch(`${apiBase}/recettes`);
+  const data = await res.json();
+  const tbody = document.querySelector('#table-admin-recettes tbody');
+  tbody.innerHTML = data.map(r => `
+    <tr>
+      <td>${r.nom}</td>
+      <td><button class="btn-delete-recette" data-nom="${r.nom}">Supprimer</button></td>
+    </tr>
+  `).join('');
+}
+
+/**
+ * Charge et affiche toutes les matières avec un bouton de suppression.
+ */
+async function loadAdminMatieres() {
+  const res = await fetch(`${apiBase}/stock`);
+  const { bases, oxydes } = await res.json();
+  const all = [
+    ...bases.map(m => ({...m, type:'base'})),
+    ...oxydes.map(m => ({...m, type:'oxyde'}))
+  ];
+  const tbody = document.querySelector('#table-admin-matieres tbody');
+  tbody.innerHTML = all.map(m => `
+    <tr>
+      <td>${m.nom}</td>
+      <td>${m.type}</td>
+      <td><button class="btn-delete-matiere" data-nom="${m.nom}">Supprimer</button></td>
+    </tr>
+  `).join('');
+}
+
+/**
+ * Supprime une recette et recharge le tableau.
+ */
+async function handleDeleteRecette(e) {
+  if (!e.target.matches('.btn-delete-recette')) return;
+  const nom = e.target.dataset.nom;
+  const msg = document.getElementById('msg-admin-recette');
+  try {
+    const res = await fetch(`${apiBase}/recettes/${encodeURIComponent(nom)}`, { method:'DELETE' });
+    const data = await res.json();
+    showMessage(msg, data.message, !res.ok);
+    if (res.ok) loadAdminRecettes();
+  } catch (err) {
+    showMessage(msg, 'Erreur réseau', true);
+  }
+}
+
+/**
+ * Supprime une matière et recharge le tableau.
+ * Attention : l'API doit refuser la suppression si la matière est encore utilisée dans une recette.
+ */
+async function handleDeleteMatiere(e) {
+  if (!e.target.matches('.btn-delete-matiere')) return;
+  const nom = e.target.dataset.nom;
+  const msg = document.getElementById('msg-admin-matiere');
+  try {
+    const res = await fetch(`${apiBase}/matieres/${encodeURIComponent(nom)}`, { method:'DELETE' });
+    const data = await res.json();
+    showMessage(msg, data.message, !res.ok);
+    if (res.ok) loadAdminMatieres();
+  } catch (err) {
+    showMessage(msg, 'Erreur réseau', true);
+  }
+}
+
 // ─── 4. DOMContentLoaded ───────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   const recetteSelect = document.getElementById('recette-select');
@@ -402,7 +474,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('▶︎ J’attache handleProduce au bouton Produire');
     productionBtn.addEventListener('click', handleProduce);
   }
-
+  
   // ==== Bloc STOCK & ACHATS ====
   // On n'initialise cette partie QUE si on est sur la page stock.html
   const formMatiere = document.getElementById('form-add-matiere');
@@ -424,4 +496,15 @@ document.addEventListener('DOMContentLoaded', () => {
     loadRecettesList();                     // charger la liste au chargement
     formRecette.addEventListener('submit', handleAddRecette);
   }
+// ==== Bloc ADMINISTRATION ====
+if (document.getElementById('section-admin-recettes')) {
+  loadAdminRecettes();
+  document.querySelector('#table-admin-recettes tbody')
+          .addEventListener('click', handleDeleteRecette);
+
+  loadAdminMatieres();
+  document.querySelector('#table-admin-matieres tbody')
+          .addEventListener('click', handleDeleteMatiere);
+}
+  
 });
