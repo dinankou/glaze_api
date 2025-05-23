@@ -78,6 +78,29 @@ console.log('Table simulation-result trouvée ?', document.querySelector('#simul
         </tr>
       `;
     }).join('');
+
+    // Détecter les cas “noir” et “low”
+    const couleurs = details.map(d => d.couleur);
+    const hasBlack = couleurs.includes('noir');
+    const hasLow   = couleurs.some(c => c === 'rouge' || c === 'orange');
+    
+    if (hasBlack) {
+      // ne pas afficher de bouton si noir
+      produceBtn.style.display = 'none';
+    } else {
+      // afficher le bouton
+      produceBtn.style.display = 'block';
+    
+      if (hasLow) {
+        // override requis pour orange/rouge
+        produceBtn.textContent    = 'Forcer la production';
+        produceBtn.dataset.override = 'true';
+      } else {
+        // tout vert : production normale
+        produceBtn.textContent    = 'Produire';
+        produceBtn.dataset.override = 'false';
+      }
+    }
     
     // Afficher le bouton Produire et ajuster le libellé
     if (data.production_possible) {
