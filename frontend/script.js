@@ -45,21 +45,23 @@ async function handleSimulate() {
 
     // On récupère le tableau "details" (Array) renvoyé par l’API
     const details = data.details || [];
+    
 
-    // Affichage : on utilise bien details.map, et non data.map !
-    msgEl.innerHTML = details.map(d =>
-      `<div>
-         ${d.matiere}: 
-         <strong>${d.quantite_necessaire.toFixed(2)}g</strong> 
-         (${d.statut})
-       </div>`
-    ).join('');
-
-  } catch (err) {
-    showMessage(msgEl, 'Échec simulation', true);
-    console.error(err);
+const tbodySim = document.querySelector('#simulation-result tbody');
+    
+  tbodySim.innerHTML = details.map(d => `
+    <tr>
+      <td>${d.matiere}</td>
+      <td>${d.quantite_necessaire.toFixed(2)}</td>
+      <td>${d.statut}</td>
+    </tr>
+  `).join('');
+  
+    } catch (err) {
+      showMessage(msgEl, 'Échec simulation', true);
+      console.error(err);
+    }
   }
-}
 
 async function handleProduce() {
   const recetteSelect = document.getElementById('recette-select');
@@ -75,6 +77,15 @@ async function handleProduce() {
     });
     const json    = await res.json();
     showMessage(msgEl, json.message, !res.ok);
+    if (res.ok && json.stock_apres) {
+  const tbodyProd = document.querySelector('#production-result tbody');
+  tbodyProd.innerHTML = json.stock_apres.map(s => `
+    <tr>
+      <td>${s.matiere}</td>
+      <td>${s.nouveau_stock.toFixed(2)}</td>
+    </tr>
+  `).join('');
+}
   } catch (err) {
     showMessage(msgEl, 'Échec production', true);
     console.error(err);
