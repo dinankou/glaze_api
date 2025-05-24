@@ -98,87 +98,101 @@ async function handleCompromiseIndex() {
   const [recA, recB] = selected;
 
   try {
-    const res  = await fetch(`${apiBase}/compromis_recettes`, {
-      method: 'POST',
+    // 1) Appel à l'API
+    const res = await fetch(`${apiBase}/compromis_recettes`, {
+      method:  'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ recetteA: recA, recetteB: recB })
+      body:    JSON.stringify({ recetteA: recA, recetteB: recB })
     });
+
+    // 2) Traitement de la réponse
     const data = await res.json();
     if (!res.ok) {
       return showMessage(msg, data.message || 'Erreur de compromis', true);
     }
 
-    // Préparer le <canvas>
-    result.innerHTML = `<div class="chart-container"><canvas id="compromise-chart"></canvas></div>`;
+    // 3) Préparer le canvas
+    result.innerHTML = `
+      <div class="chart-container">
+        <canvas id="compromise-chart"></canvas>
+      </div>
+    `;
     const ctx = document.getElementById('compromise-chart').getContext('2d');
 
-    // Construire un dataset par matière
-    // ➊ on ne garde que les matières réellement présentes dans A ET B
+    // 4) Ne garder que les matières communes aux deux recettes
     const common = data.data.filter(d => d.pctA > 0 && d.pctB > 0);
-    
     if (common.length === 0) {
       return showMessage(msg, 'Aucune matière commune à ces deux recettes.', true);
     }
-    
-    // ➋ on bâtit les datasets sur ce sous-ensemble
+
+    // 5) Construire les datasets pour Chart.js
     const datasets = common.map(d => {
       const maxA = d.stock * 100 / d.pctA;
       const maxB = d.stock * 100 / d.pctB;
       return {
         label: d.matiere,
         data: [
-          { x: 0, y: maxB },
-          { x: maxA, y: 0 }
+          { x: 0,   y: maxB },
+          { x: maxA, y: 0    }
         ],
         fill: false,
         borderWidth: 2,
         tension: 0
       };
     });
-      // Droite de contrainte : de (0, maxB) à (maxA, 0)
-      const maxA = d.pctA > 0 ? d.stock * 100 / d.pctA : 0;
-      const maxB = d.pctB > 0 ? d.stock * 100 / d.pctB : 0;
-      return {
-        label: d.matiere,
-        data: [
-          { x: 0, y: maxB },
-          { x: maxA, y: 0 }
-        ],
-        fill: false,
-        borderWidth: 2,
-        tension: 0,
-      };
-    });
-    // ➌ bornes mini/maxi
-    const xs = datasets.map(ds => ds.data[1].x);
-    const ys = datasets.map(ds => ds.data[0].y);
-    const maxX = Math.min(...xs);
-    const maxY = Math.min(...ys);
-  
-    // ➍ création du graphique
-    if (window.compromiseChart) window.compromiseChart.destroy();
+
+    // 6) Calculer les bornes min/max pour zoom
+    const xs   = datasets.map(ds => ds.data[1].x).filter(v => v > 0);
+    const ys   = datasets.map(ds => ds.data[0].y).filter(v => v > 0);
+    const maxX = xs.length ? Math.min(...xs) : undefined;
+    const maxY = ys.length ? Math.min(...ys) : undefined;
+
+    // 7) (Re)créer le graphique
+    if (window.compromiseChart) {
+      window.compromiseChart.destroy();
+    }
     window.compromiseChart = new Chart(ctx, {
       type: 'line',
       data: { datasets },
       options: {
         scales: {
-          x: { type: 'linear', position: 'bottom', min: 0, max: maxX,
-               title: { display: true, text: `Quantité de ${data.recetteA}` } },
-          y: { min: 0, max: maxY,
-               title: { display: true, text: `Quantité de ${data.recetteB}` } }
+          x: {
+            type: 'linear',
+            position: 'bottom',
+            min: 0,
+            ...(maxX !== undefined ? { max: maxX } : {}),
+            title: {
+              display: true,
+              text: `Quantité de ${data.recetteA}`
+            }
+          },
+          y: {
+            min: 0,
+            ...(maxY !== undefined ? { max: maxY } : {}),
+            title: {
+              display: true,
+              text: `Quantité de ${data.recetteB}`
+            }
+          }
         },
         plugins: {
-          title: { display: true, text: `Compromis : ${data.recetteA} vs ${data.recetteB}` },
-          legend: { position: 'right' }
+          title: {
+            display: true,
+            text: `Compromis : ${data.recetteA} vs ${data.recetteB}`
+          },
+          legend: {
+            position: 'right'
+          }
         }
       }
     });
 
   } catch (err) {
-    console.error('Erreur réseau compromis index:', err);
-    showMessage(msg, 'Erreur réseau', true);
+    console.error('Erreur réseau ou de tracé dans handleCompromiseIndex :', err);
+    showMessage(msg, 'Erreur réseau ou inattendue', true);
   }
 }
+
 // ─── 2.2 Fonctions Production ───────────────────────────────────────────────────
 async function loadRecettes() {
   try {
