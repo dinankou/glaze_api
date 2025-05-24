@@ -560,6 +560,127 @@ def delete_matiere(nom):
     return jsonify({"message": f"Matière '{key}' supprimée avec succès."}), 200
 
 # ==========================================
+#   SIMULATION DE PRODUCTION GROUPEE
+# ==========================================
+@app.route("/simuler_production_groupe", methods=["POST"])
+def simuler_production_groupe():
+    """
+    Pour un ensemble de recettes, calcule la quantité maximale
+    identique qu'on peut produire de chacune selon le stock actuel.
+    JSON attendu en entrée :
+      { "recettes": ["Recette A", "Recette B", ...] }
+    Réponse :
+      {
+        "recettes": [...],
+        "quantite_max_commune": float,
+        "details": {
+          "<matiere>": {
+            "pct_total": float,         # somme des % sur toutes les recettes
+            "stock": float,             # stock actuel de la matière
+            "max_q_pour_matiere": float # stock * 100 / pct_total
+          }, ...
+        }
+      }
+    """
+    data      = request.get_json() or {}
+    noms      = data.get("recettes", [])
+    # Charger tout le stock
+    stock     = { m.nom: m.quantite for m in Matiere.query.all() }
+    # Somme des pourcentages pour chaque matière
+    compo_tot = {}
+    for nom in noms:
+        rec = Recette.query.filter_by(nom=nom).first()
+        if not rec:
+            return jsonify({"message": f"Recette '{nom}' introuvable."}), 404
+        # fusion base+oxydes
+        for mat, pct in {**rec.base, **rec.oxydes}.items():
+            compo_tot[mat] = compo_tot.get(mat, 0) + pct
+
+    # calcul de la quantité commune maximale
+    max_list = [
+        stock.get(mat, 0) * 100.0 / pct
+        for mat, pct in compo_tot.items() if pct > 0
+    ]
+    q_commune = round(min(max_list), 2) if max_list else 0
+
+    # détails par matière
+    details = {
+        mat: {
+            "pct_total": round(pct,2),
+            "stock":     round(stock.get(mat,0),2),
+            "max_q_pour_matiere": round(stock.get(mat,0) * 100.0 / pct,2)
+        }
+        for mat, pct in compo_tot.items() if pct > 0
+    }
+
+    return jsonify({
+        "recettes": noms,
+        "quantite_max_commune": q_commune,
+        "details": details
+    }), 200
+
+
+# ==========================================
+#   DONNÉES POUR GRAPHE DE COMPROMIS
+# ==========================================
+@app.route("/compromis_recettes", methods=["POST"])
+def compromis_recettes():
+    """
+    Fournit pour deux recettes les données nécessaires au tracé
+    d'un graphe de compromis (Spearmint vs White Liner, etc.).
+    JSON attendu :
+      { "recetteA": "Nom A", "recetteB": "Nom B" }
+    Réponse :
+      {
+        "recetteA": "Nom A",
+        "recetteB": "Nom B",
+        "data": [
+          {
+            "matiere": "<matiere>",
+            "pctA": float,     # pourcentage dans A
+            "pctB": float,     # pourcentage dans B
+            "stock": float     # stock actuel
+          },
+          ...
+        ]
+      }
+    """
+    data    = request.get_json() or {}
+    nameA   = data.get("recetteA")
+    nameB   = data.get("recetteB")
+    # validation
+    recA = Recette.query.filter_by(nom=nameA).first()
+    recB = Recette.query.filter_by(nom=nameB).first()
+    if not recA or not recB:
+        missing = [n for n,r in [(nameA,recA),(nameB,recB)] if not r]
+        return jsonify({"message": f"Recette(s) introuvable(s) : {', '.join(missing)}"}), 404
+
+    # extraire compositions
+    compA = {**recA.base, **recA.oxydes}
+    compB = {**recB.base, **recB.oxydes}
+
+    # union des matières
+    mats = set(compA) | set(compB)
+    # charger stocks
+    stock = { m.nom: m.quantite for m in Matiere.query.filter(Matiere.nom.in_(mats)).all() }
+
+    # construire la liste data
+    result = []
+    for mat in mats:
+        result.append({
+            "matiere": mat,
+            "pctA":    round(compA.get(mat,0),2),
+            "pctB":    round(compB.get(mat,0),2),
+            "stock":   round(stock.get(mat,0),2)
+        })
+
+    return jsonify({
+        "recetteA": nameA,
+        "recetteB": nameB,
+        "data": result
+    }), 200
+
+# ==========================================
 #   def init_db
 # ==========================================
 # def init_db
