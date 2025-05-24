@@ -701,7 +701,7 @@ def compromis_recettes():
         pctA = round(compA.get(mat, 0), 2)
         pctB = round(compB.get(mat, 0), 2)
         # On n'inclut que les matières réellement utilisées
-        if pctA === 0 and pctB === 0:
+        if pctA == 0 and pctB == 0:
             continue
         result.append({
             "matiere": mat,
