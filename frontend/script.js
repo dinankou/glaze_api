@@ -113,7 +113,28 @@ async function handleCompromiseIndex() {
     const ctx = document.getElementById('compromise-chart').getContext('2d');
 
     // Construire un dataset par matière
-    const datasets = data.data.map(d => {
+    // ➊ on ne garde que les matières réellement présentes dans A ET B
+    const common = data.data.filter(d => d.pctA > 0 && d.pctB > 0);
+    
+    if (common.length === 0) {
+      return showMessage(msg, 'Aucune matière commune à ces deux recettes.', true);
+    }
+    
+    // ➋ on bâtit les datasets sur ce sous-ensemble
+    const datasets = common.map(d => {
+      const maxA = d.stock * 100 / d.pctA;
+      const maxB = d.stock * 100 / d.pctB;
+      return {
+        label: d.matiere,
+        data: [
+          { x: 0, y: maxB },
+          { x: maxA, y: 0 }
+        ],
+        fill: false,
+        borderWidth: 2,
+        tension: 0
+      };
+    });
       // Droite de contrainte : de (0, maxB) à (maxA, 0)
       const maxA = d.pctA > 0 ? d.stock * 100 / d.pctA : 0;
       const maxB = d.pctB > 0 ? d.stock * 100 / d.pctB : 0;
@@ -128,52 +149,30 @@ async function handleCompromiseIndex() {
         tension: 0,
       };
     });
-    // calculer les bornes mini/maxi
-    const xs = datasets.map(ds => ds.data[1].x).filter(v => v > 0);
-    const ys = datasets.map(ds => ds.data[0].y).filter(v => v > 0);
-    const maxX = xs.length ? Math.min(...xs) : undefined;
-    const maxY = ys.length ? Math.min(...ys) : undefined;
-
-    // Détruire l'ancien graphique si existant
+    // ➌ bornes mini/maxi
+    const xs = datasets.map(ds => ds.data[1].x);
+    const ys = datasets.map(ds => ds.data[0].y);
+    const maxX = Math.min(...xs);
+    const maxY = Math.min(...ys);
+  
+    // ➍ création du graphique
     if (window.compromiseChart) window.compromiseChart.destroy();
-
-    // Créer le graphique
-window.compromiseChart = new Chart(ctx, {
-  type: 'line',
-  data: { datasets },
-  options: {
-    scales: {
-      x: {
-        type: 'linear',
-        position: 'bottom',
-        min: 0,
-        // on n'ajoute max: ... que si on a une valeur valide
-        ...(maxX !== undefined ? { max: maxX } : {}),
-        title: {
-          display: true,
-          text: `Quantité de ${data.recetteA}`
-        }
-      },
-      y: {
-        min: 0,
-        ...(maxY !== undefined ? { max: maxY } : {}),
-        title: {
-          display: true,
-          text: `Quantité de ${data.recetteB}`
+    window.compromiseChart = new Chart(ctx, {
+      type: 'line',
+      data: { datasets },
+      options: {
+        scales: {
+          x: { type: 'linear', position: 'bottom', min: 0, max: maxX,
+               title: { display: true, text: `Quantité de ${data.recetteA}` } },
+          y: { min: 0, max: maxY,
+               title: { display: true, text: `Quantité de ${data.recetteB}` } }
+        },
+        plugins: {
+          title: { display: true, text: `Compromis : ${data.recetteA} vs ${data.recetteB}` },
+          legend: { position: 'right' }
         }
       }
-    },
-    plugins: {
-      title: {
-        display: true,
-        text: `Compromis : ${data.recetteA} vs ${data.recetteB}`
-      },
-      legend: {
-        position: 'right'
-      }
-    }
-  }
-});
+    });
 
   } catch (err) {
     console.error('Erreur réseau compromis index:', err);
