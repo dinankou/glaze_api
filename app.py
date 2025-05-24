@@ -698,13 +698,18 @@ def compromis_recettes():
     # construire la liste data
     result = []
     for mat in mats:
+        pctA = round(compA.get(mat, 0), 2)
+        pctB = round(compB.get(mat, 0), 2)
+        # On n'inclut que les matières réellement utilisées
+        if pctA === 0 and pctB === 0:
+            continue
         result.append({
             "matiere": mat,
-            "pctA":    round(compA.get(mat,0),2),
-            "pctB":    round(compB.get(mat,0),2),
-            "stock":   round(stock.get(mat,0),2)
+            "pctA":    pctA,
+            "pctB":    pctB,
+            "stock":   round(stock.get(mat, 0), 2)
         })
-
+        
     return jsonify({
         "recetteA": nameA,
         "recetteB": nameB,
