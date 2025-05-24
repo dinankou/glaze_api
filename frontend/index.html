@@ -17,8 +17,39 @@
       <a href="administration.html">Administration</a>
     </nav>
   </header>
-  <div class="container">
 
+  
+  <div class="container">
+  <!-- ==== Simulation groupée & Graphe de compromis ==== -->
+<div class="row simulation-container">
+  <!-- Colonne de gauche : liste de recettes -->
+  <div class="col-left">
+    <h2>Sélection des recettes</h2>
+    <div id="list-recettes-index" class="form-group">
+      <!-- Les cases à cocher y seront injectées par loadRecettesCheckboxList() -->
+    </div>
+  </div>
+
+  <!-- Colonne de droite : boutons d’action -->
+  <div class="col-right">
+    <h2>Actions</h2>
+    <button id="btn-compromise" class="btn">Graphe de compromis</button>
+    <button id="btn-simulate-group" class="btn">Simulation groupée</button>
+  </div>
+</div>
+
+<!-- Message d’erreur / d’info -->
+<div id="msg-index" class="message"></div>
+
+<!-- Zone d’affichage du JSON (temporaire) ou du résultat -->
+<div id="result-index" class="card">
+  <!-- Le <pre> ou le graphique y seront injectés par JS -->
+</div>
+
+<!-- ==== Carte Production existante ==== -->
+<section class="card">
+  <!-- ... ton contenu Production actuel ... -->
+</section>
     <!-- Carte Production -->
     <section class="card" id="production-section">
       <h2>Produire une recette</h2>
