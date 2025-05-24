@@ -586,15 +586,27 @@ def simuler_production_groupe():
     noms      = data.get("recettes", [])
     # Charger tout le stock
     stock     = { m.nom: m.quantite for m in Matiere.query.all() }
+    
     # Somme des pourcentages pour chaque matière
     compo_tot = {}
     for nom in noms:
         rec = Recette.query.filter_by(nom=nom).first()
         if not rec:
             return jsonify({"message": f"Recette '{nom}' introuvable."}), 404
-        # fusion base+oxydes
-        for mat, pct in {**rec.base, **rec.oxydes}.items():
+
+        # Reconstruire les dicts base et oxydes à partir de rec.compositions
+        base_dict, oxydes_dict = {}, {}
+        for comp in rec.compositions:
+            mat = comp.matiere.nom
+            if comp.type == "base":
+                base_dict[mat] = comp.pourcentage
+            else:
+                oxydes_dict[mat] = comp.pourcentage
+
+        # Fusionner et ajouter à l'agrégat
+        for mat, pct in {**base_dict, **oxydes_dict}.items():
             compo_tot[mat] = compo_tot.get(mat, 0) + pct
+
 
     # calcul de la quantité commune maximale
     max_list = [
