@@ -10,7 +10,113 @@ function showMessage(el, msg, isError = false) {
   setTimeout(() => el.textContent = '', 3000);
 }
 
-// ─── 2. Fonctions Production ───────────────────────────────────────────────────
+// ─── 2.1 Simulation multi-recettes & compromis (index.html) ────────────────────
+
+/**
+ * Charge toutes les recettes dans une liste de cases à cocher.
+ * Nécessite dans index.html un <div id="list-recettes-index"></div>.
+ */
+async function loadRecettesCheckboxList() {
+  try {
+    const res = await fetch(`${apiBase}/recettes`);
+    const data = await res.json();
+    const container = document.getElementById('list-recettes-index');
+    if (!container) return;
+    container.innerHTML = data
+      .map(r => `
+        <label class="checkbox-inline">
+          <input type="checkbox" value="${r.nom}"> ${r.nom}
+        </label>
+      `).join('');
+  } catch (err) {
+    console.error('Échec loadRecettesCheckboxList:', err);
+  }
+}
+
+/**
+ * Récupère les recettes cochées dans index.html.
+ */
+function getSelectedRecettesIndex() {
+  return Array.from(
+    document.querySelectorAll('#list-recettes-index input[type=checkbox]:checked')
+  ).map(cb => cb.value);
+}
+
+/**
+ * Simule la production groupée (n recettes) et affiche la quantité max commune.
+ * Nécessite :
+ *  - <button id="btn-simulate-group">…
+ *  - <div id="msg-index"></div> pour les messages
+ *  - <div id="result-index"></div> pour afficher le résultat
+ */
+async function handleSimulateGroupIndex() {
+  const msg = document.getElementById('msg-index');
+  msg.textContent = '';
+  const selected = getSelectedRecettesIndex();
+  if (!selected.length) {
+    return showMessage(msg, 'Cochez au moins une recette.', true);
+  }
+
+  try {
+    const res = await fetch(`${apiBase}/simuler_production_groupe`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ recettes: selected })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      return showMessage(msg, data.message || 'Erreur de simulation groupée', true);
+    }
+
+    // Affichage ultra-simple (à enrichir si tu veux un tableau)
+    document.getElementById('result-index').innerHTML = `
+      <h3>Quantité max commune</h3>
+      <p>${data.quantite_max_commune.toFixed(2)}</p>
+    `;
+  } catch (err) {
+    console.error('Erreur réseau simulate_group index:', err);
+    showMessage(msg, 'Erreur réseau', true);
+  }
+}
+
+/**
+ * Simule le graphe de compromis pour exactement deux recettes.
+ * Nécessite :
+ *  - <button id="btn-compromise">…
+ *  - #msg-index, #result-index comme ci-dessus
+ */
+async function handleCompromiseIndex() {
+  const msg = document.getElementById('msg-index');
+  msg.textContent = '';
+  const selected = getSelectedRecettesIndex();
+  if (selected.length !== 2) {
+    return showMessage(msg, 'Sélectionnez exactement deux recettes pour le compromis.', true);
+  }
+  const [recA, recB] = selected;
+
+  try {
+    const res = await fetch(`${apiBase}/compromis_recettes`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ recetteA: recA, recetteB: recB })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      return showMessage(msg, data.message || 'Erreur de compromis', true);
+    }
+
+    // Pour l'instant on affiche les données brutes ; on pourra remplacer
+    // par un dessin de graphe (Chart.js, D3, <canvas>…) plus tard.
+    document.getElementById('result-index').innerHTML = `
+      <pre>${JSON.stringify(data, null, 2)}</pre>
+    `;
+  } catch (err) {
+    console.error('Erreur réseau compromis index:', err);
+    showMessage(msg, 'Erreur réseau', true);
+  }
+}
+
+// ─── 2.2 Fonctions Production ───────────────────────────────────────────────────
 async function loadRecettes() {
   try {
     const res = await fetch(`${apiBase}/recettes`);
@@ -21,6 +127,7 @@ async function loadRecettes() {
     throw err;
   }
 }
+
 
 async function handleSimulate() {
   console.log('▶︎ handleSimulate() appelé');
@@ -246,8 +353,8 @@ async function handleAddAchat(e) {
   }
 }
 
-// ─── 3. Fonctions Recettes ───────────────────────────────────────────────────
-// ─── 3.1. Parser libre de composition ────────────────────────────────────────
+// ─── 4. Fonctions Recettes ───────────────────────────────────────────────────
+// ─── 4.1. Parser libre de composition ────────────────────────────────────────
 
 /**
  * Transforme une chaîne du type
@@ -318,7 +425,7 @@ async function handleAddRecette(e) {
   const prodDocInput = document.getElementById('recette-production-doc-url');
   const msgEl        = document.getElementById('msg-recette');
 
-  // ─── Parsing des compositions ───────────────────────────────────────────
+  // ─── 4.2 Parsing des compositions ───────────────────────────────────────────
   let bases, oxydes;
   try {
     const rawBases = basesInput.value.trim();
@@ -347,7 +454,7 @@ async function handleAddRecette(e) {
     return showMessage(msgEl, msg, true);
   }
 
-  // ─── Envoi au serveur ──────────────────────────────────────────────────
+  // ─── 4.3 Envoi au serveur ──────────────────────────────────────────────────
   try {
     const payload = {
       nom: nomInput.value.trim(),
@@ -375,7 +482,7 @@ async function handleAddRecette(e) {
   }
 }
 
-// ===== 3.X Fonctions Administration =====
+// ===== 5. Fonctions Administration =====
 
 /**
  * Charge et affiche toutes les recettes avec un bouton de suppression.
@@ -447,7 +554,7 @@ async function handleDeleteMatiere(e) {
   }
 }
 
-// ─── 4. DOMContentLoaded ───────────────────────────────────────────────────────
+// ─── 6. DOMContentLoaded ───────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   const recetteSelect = document.getElementById('recette-select');
   const simulateBtn   = document.getElementById('simulate-btn');
