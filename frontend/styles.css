@@ -179,6 +179,21 @@ nav a:hover {
 }
 
 /* ---------------------------------------------------
+  Graphe de compromis
+   --------------------------------------------------- */
+.chart-container {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  margin: auto;
+  padding: 1rem;
+}
+#compromise-chart {
+  width: 100% !important;
+  height: 400px !important;
+}
+
+/* ---------------------------------------------------
    Statuts de simulation
    --------------------------------------------------- */
 .table.result-table td[class^="status-"] {
