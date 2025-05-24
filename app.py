@@ -397,7 +397,7 @@ def simuler_production():
         dispo = mt.quantite
         seuil_orange = 300 if mt.type=="base" else 30
         seuil_rouge  = 200 if mt.type=="base" else 20
-        seuil_noir   = 100 if mt.type=="base" else 5
+        seuil_noir   = 0 if mt.type=="base" else 0
 
         reste = round(dispo - massa_req, 2)
         # déterminer statut
