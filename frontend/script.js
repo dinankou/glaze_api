@@ -556,18 +556,24 @@ async function handleDeleteMatiere(e) {
 
 // ─── 6. DOMContentLoaded ───────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+
+  // ==== Bloc INDEX (simulation groupée & compromis) ====
+  const listIndex   = document.getElementById('list-recettes-index');
+  const btnComp     = document.getElementById('btn-compromise');
+  const btnGroup    = document.getElementById('btn-simulate-group');
+  if (listIndex && btnComp && btnGroup) {
+    console.log('▶︎ Init simulation groupée & compromis');
+    loadRecettesCheckboxList();
+    btnComp.addEventListener('click', handleCompromiseIndex);
+    btnGroup.addEventListener('click', handleSimulateGroupIndex);
+  }
+
+  // ==== Bloc PRODUCTION (simulation 1 recette) ====
   const recetteSelect = document.getElementById('recette-select');
   const simulateBtn   = document.getElementById('simulate-btn');
-  const productionBtn = document.getElementById('produce-btn');
-
-  // 1) Si on est bien sur la page de production (on a le select + le bouton Simuler)
   if (recetteSelect && simulateBtn) {
-    console.log('▶︎ Init partie production');
-
-    // On vide l'option de chargement (optionnel)
+    console.log('▶︎ Init simulation simple');
     recetteSelect.innerHTML = '';
-
-    // Charge la liste des recettes
     loadRecettes()
       .then(recettes => {
         recettes.forEach(r => {
@@ -576,47 +582,43 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       })
       .catch(err => console.error('Erreur loadRecettes:', err));
-
-    // Attache le simulateur
     simulateBtn.addEventListener('click', handleSimulate);
   }
 
-  // 2) Si le bouton Produire existe, on lui attache son listener
+  // ==== Bloc PRODUCE (lancer la production) ====
+  const productionBtn = document.getElementById('produce-btn');
   if (productionBtn) {
-    console.log('▶︎ J’attache handleProduce au bouton Produire');
+    console.log('▶︎ Init production');
     productionBtn.addEventListener('click', handleProduce);
   }
-  
+
   // ==== Bloc STOCK & ACHATS ====
-  // On n'initialise cette partie QUE si on est sur la page stock.html
   const formMatiere = document.getElementById('form-add-matiere');
   const formAchat   = document.getElementById('form-add-achat');
   const stockTable  = document.getElementById('table-stock-bases');
-
   if (formMatiere && formAchat && stockTable) {
     loadStock();
     loadHistorique();
     formMatiere.addEventListener('submit', handleAddMatiere);
     formAchat.addEventListener('submit', handleAddAchat);
   }
-  // ==== Bloc RECETTES ====
-  // Ne s'exécute que sur recettes.html
-  const formRecette     = document.getElementById('form-add-recette');
-  const recettesTable   = document.getElementById('table-recettes');
 
+  // ==== Bloc RECETTES ====
+  const formRecette   = document.getElementById('form-add-recette');
+  const recettesTable = document.getElementById('table-recettes');
   if (formRecette && recettesTable) {
-    loadRecettesList();                     // charger la liste au chargement
+    loadRecettesList();
     formRecette.addEventListener('submit', handleAddRecette);
   }
-// ==== Bloc ADMINISTRATION ====
-if (document.getElementById('section-admin-recettes')) {
-  loadAdminRecettes();
-  document.querySelector('#table-admin-recettes tbody')
-          .addEventListener('click', handleDeleteRecette);
 
-  loadAdminMatieres();
-  document.querySelector('#table-admin-matieres tbody')
-          .addEventListener('click', handleDeleteMatiere);
-}
-  
+  // ==== Bloc ADMINISTRATION ====
+  if (document.getElementById('section-admin-recettes')) {
+    loadAdminRecettes();
+    document.querySelector('#table-admin-recettes tbody')
+            .addEventListener('click', handleDeleteRecette);
+    loadAdminMatieres();
+    document.querySelector('#table-admin-matieres tbody')
+            .addEventListener('click', handleDeleteMatiere);
+  }
+
 });
