@@ -128,6 +128,9 @@ async function handleCompromiseIndex() {
         tension: 0,
       };
     });
+    // calculer les bornes mini/maxi
+    const maxX = Math.min(...datasets.map(ds => ds.data[1].x));
+    const maxY = Math.min(...datasets.map(ds => ds.data[0].y));
 
     // Détruire l'ancien graphique si existant
     if (window.compromiseChart) window.compromiseChart.destroy();
@@ -141,9 +144,13 @@ async function handleCompromiseIndex() {
           x: {
             type: 'linear',
             position: 'bottom',
+            min: 0,
+            max: maxX,                // borne du zoom sur X
             title: { display: true, text: `Quantité de ${data.recetteA}` }
           },
           y: {
+            min: 0,
+            max: maxY,                // borne du zoom sur Y
             title: { display: true, text: `Quantité de ${data.recetteB}` }
           }
         },
