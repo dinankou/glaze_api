@@ -129,40 +129,51 @@ async function handleCompromiseIndex() {
       };
     });
     // calculer les bornes mini/maxi
-    const maxX = Math.min(...datasets.map(ds => ds.data[1].x));
-    const maxY = Math.min(...datasets.map(ds => ds.data[0].y));
+    const xs = datasets.map(ds => ds.data[1].x).filter(v => v > 0);
+    const ys = datasets.map(ds => ds.data[0].y).filter(v => v > 0);
+    const maxX = xs.length ? Math.min(...xs) : undefined;
+    const maxY = ys.length ? Math.min(...ys) : undefined;
 
     // Détruire l'ancien graphique si existant
     if (window.compromiseChart) window.compromiseChart.destroy();
 
     // Créer le graphique
-    window.compromiseChart = new Chart(ctx, {
-      type: 'line',
-      data: { datasets },
-      options: {
-        scales: {
-          x: {
-            type: 'linear',
-            position: 'bottom',
-            min: 0,
-            max: maxX,                // borne du zoom sur X
-            title: { display: true, text: `Quantité de ${data.recetteA}` }
-          },
-          y: {
-            min: 0,
-            max: maxY,                // borne du zoom sur Y
-            title: { display: true, text: `Quantité de ${data.recetteB}` }
-          }
-        },
-        plugins: {
-          title: {
-            display: true,
-            text: `Compromis : ${data.recetteA} vs ${data.recetteB}`
-          },
-          legend: { position: 'right' }
+window.compromiseChart = new Chart(ctx, {
+  type: 'line',
+  data: { datasets },
+  options: {
+    scales: {
+      x: {
+        type: 'linear',
+        position: 'bottom',
+        min: 0,
+        // on n'ajoute max: ... que si on a une valeur valide
+        ...(maxX !== undefined ? { max: maxX } : {}),
+        title: {
+          display: true,
+          text: `Quantité de ${data.recetteA}`
+        }
+      },
+      y: {
+        min: 0,
+        ...(maxY !== undefined ? { max: maxY } : {}),
+        title: {
+          display: true,
+          text: `Quantité de ${data.recetteB}`
         }
       }
-    });
+    },
+    plugins: {
+      title: {
+        display: true,
+        text: `Compromis : ${data.recetteA} vs ${data.recetteB}`
+      },
+      legend: {
+        position: 'right'
+      }
+    }
+  }
+});
 
   } catch (err) {
     console.error('Erreur réseau compromis index:', err);
