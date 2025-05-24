@@ -86,8 +86,11 @@ async function handleSimulateGroupIndex() {
  *  - #msg-index, #result-index comme ci-dessus
  */
 async function handleCompromiseIndex() {
-  const msg = document.getElementById('msg-index');
+  const msg    = document.getElementById('msg-index');
+  const result = document.getElementById('result-index');
   msg.textContent = '';
+  result.innerHTML = ''; // on vide l'ancienne sortie
+
   const selected = getSelectedRecettesIndex();
   if (selected.length !== 2) {
     return showMessage(msg, 'Sélectionnez exactement deux recettes pour le compromis.', true);
@@ -95,7 +98,7 @@ async function handleCompromiseIndex() {
   const [recA, recB] = selected;
 
   try {
-    const res = await fetch(`${apiBase}/compromis_recettes`, {
+    const res  = await fetch(`${apiBase}/compromis_recettes`, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ recetteA: recA, recetteB: recB })
@@ -105,17 +108,60 @@ async function handleCompromiseIndex() {
       return showMessage(msg, data.message || 'Erreur de compromis', true);
     }
 
-    // Pour l'instant on affiche les données brutes ; on pourra remplacer
-    // par un dessin de graphe (Chart.js, D3, <canvas>…) plus tard.
-    document.getElementById('result-index').innerHTML = `
-      <pre>${JSON.stringify(data, null, 2)}</pre>
-    `;
+    // Préparer le <canvas>
+    result.innerHTML = `<div class="chart-container"><canvas id="compromise-chart"></canvas></div>`;
+    const ctx = document.getElementById('compromise-chart').getContext('2d');
+
+    // Construire un dataset par matière
+    const datasets = data.data.map(d => {
+      // Droite de contrainte : de (0, maxB) à (maxA, 0)
+      const maxA = d.pctA > 0 ? d.stock * 100 / d.pctA : 0;
+      const maxB = d.pctB > 0 ? d.stock * 100 / d.pctB : 0;
+      return {
+        label: d.matiere,
+        data: [
+          { x: 0, y: maxB },
+          { x: maxA, y: 0 }
+        ],
+        fill: false,
+        borderWidth: 2,
+        tension: 0,
+      };
+    });
+
+    // Détruire l'ancien graphique si existant
+    if (window.compromiseChart) window.compromiseChart.destroy();
+
+    // Créer le graphique
+    window.compromiseChart = new Chart(ctx, {
+      type: 'line',
+      data: { datasets },
+      options: {
+        scales: {
+          x: {
+            type: 'linear',
+            position: 'bottom',
+            title: { display: true, text: `Quantité de ${data.recetteA}` }
+          },
+          y: {
+            title: { display: true, text: `Quantité de ${data.recetteB}` }
+          }
+        },
+        plugins: {
+          title: {
+            display: true,
+            text: `Compromis : ${data.recetteA} vs ${data.recetteB}`
+          },
+          legend: { position: 'right' }
+        }
+      }
+    });
+
   } catch (err) {
     console.error('Erreur réseau compromis index:', err);
     showMessage(msg, 'Erreur réseau', true);
   }
 }
-
 // ─── 2.2 Fonctions Production ───────────────────────────────────────────────────
 async function loadRecettes() {
   try {
