@@ -667,12 +667,31 @@ def compromis_recettes():
         missing = [n for n,r in [(nameA,recA),(nameB,recB)] if not r]
         return jsonify({"message": f"Recette(s) introuvable(s) : {', '.join(missing)}"}), 404
 
-    # extraire compositions
-    compA = {**recA.base, **recA.oxydes}
-    compB = {**recB.base, **recB.oxydes}
 
-    # union des matières
-    mats = set(compA) | set(compB)
+    # Reconstruire les dicts base et oxydes pour recA
+    baseA, oxA = {}, {}
+    for comp in recA.compositions:
+        mat = comp.matiere.nom
+        if comp.type == "base":
+            baseA[mat] = comp.pourcentage
+        else:
+            oxA[mat]   = comp.pourcentage
+
+    # Reconstruire les dicts base et oxydes pour recB
+    baseB, oxB = {}, {}
+    for comp in recB.compositions:
+        mat = comp.matiere.nom
+        if comp.type == "base":
+            baseB[mat] = comp.pourcentage
+        else:
+            oxB[mat]   = comp.pourcentage
+
+    # fusionner toutes les matières des deux recettes
+    compA = {**baseA, **oxA}
+    compB = {**baseB, **oxB}
+
+    # union de toutes les matières
+    mats = set(compA.keys()) | set(compB.keys())
     # charger stocks
     stock = { m.nom: m.quantite for m in Matiere.query.filter(Matiere.nom.in_(mats)).all() }
 
