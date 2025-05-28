@@ -119,14 +119,14 @@ async function handleCompromiseIndex() {
     `;
     const ctx = document.getElementById('compromise-chart').getContext('2d');
 
-    // 4) Ne garder que les matières communes aux deux recettes
-    const common = data.data.filter(d => d.pctA > 0 && d.pctB > 0);
-    if (common.length === 0) {
-      return showMessage(msg, 'Aucune matière commune à ces deux recettes.', true);
+    // 4) Ne garder que les matières utilisées par au moins une des recettes
+    const constraints = data.data.filter(d => d.pctA > 0 || d.pctB > 0);
+    if (constraints.length === 0) {
+      return showMessage(msg, 'Aucune matière dans ces recettes.', true);
     }
 
-    // 5) Construire les datasets pour Chart.js
-    const datasets = common.map(d => {
+    // 5) Construire les datasets pour Chart.js (toutes les contraintes)
+    const datasets = constraints.map(d => {
       const maxA = d.stock * 100 / d.pctA;
       const maxB = d.stock * 100 / d.pctB;
       return {
